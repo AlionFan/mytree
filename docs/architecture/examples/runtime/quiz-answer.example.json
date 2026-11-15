@@ -1,0 +1,71 @@
+{
+  "provenance": {
+    "kind": "runtime_http",
+    "source": "docs/architecture/examples/runtime/capture-f157d63a66b1.json",
+    "source_sha256": "f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c",
+    "trace_index": 28,
+    "capture_script": "tools/e2e_loop_check.py",
+    "scope": "真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量",
+    "request_image_restored_from": null
+  },
+  "request": {
+    "schema_version": "1.0",
+    "operation": "quiz.answer",
+    "request_id": "loop-quiz-answer-13",
+    "client": {
+      "type": "web",
+      "name": "isolated-e2e"
+    },
+    "subject": {
+      "profile_id": "e2e_loop_local"
+    },
+    "input": {
+      "quiz_id": "f5a8b9485a7f47d1b4eb861dc14b447c",
+      "exercise_id": "91a68e3db687417caab532104c9b5be6",
+      "answer": "\\left(x - 7\\right) \\left(x + 7\\right)"
+    },
+    "options": {
+      "language": "zh-CN",
+      "modalities": [
+        "text",
+        "svg"
+      ]
+    }
+  },
+  "response": {
+    "schema_version": "1.0",
+    "request_id": "loop-quiz-answer-13",
+    "operation": "quiz.answer",
+    "status": "ok",
+    "output": {
+      "exercise_id": "91a68e3db687417caab532104c9b5be6",
+      "correct": true,
+      "max_hint_level": 0,
+      "verification": {
+        "level": "verified",
+        "label": "模板答案已经程序核验"
+      },
+      "evidence_id": "abc6dff77ce241799c5d70b818086eda",
+      "quiz_id": "f5a8b9485a7f47d1b4eb861dc14b447c",
+      "duplicate": false,
+      "progress": {
+        "answered_count": 1,
+        "correct_count": 1,
+        "complete": false
+      },
+      "next_step": "continue",
+      "reason": "可以继续下一题，也可以随时退出，已答内容会保留。"
+    },
+    "verification": {
+      "level": "verified",
+      "label": "模板答案已经程序核验"
+    },
+    "effects": [
+      {
+        "kind": "record_answer",
+        "id": "abc6dff77ce241799c5d70b818086eda",
+        "idempotent_replay": false
+      }
+    ]
+  }
+}

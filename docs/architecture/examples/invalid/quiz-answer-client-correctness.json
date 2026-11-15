@@ -1,0 +1,30 @@
+{
+  "schema": "AgentRequest",
+  "reason": "INC-A4：客户端不能提交正确性或分数。",
+  "payload": {
+    "schema_version": "1.0",
+    "operation": "quiz.answer",
+    "request_id": "design-quiz-answer",
+    "client": {
+      "type": "web",
+      "name": "contract-example",
+      "version": "1.0"
+    },
+    "subject": {
+      "profile_id": "contract_sample"
+    },
+    "input": {
+      "quiz_id": "quiz-F1-1",
+      "exercise_id": "quiz-q3",
+      "answer": "x(x+5)",
+      "is_correct": true
+    },
+    "options": {
+      "language": "zh-CN",
+      "modalities": [
+        "text",
+        "svg"
+      ]
+    }
+  }
+}

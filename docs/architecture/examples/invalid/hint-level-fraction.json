@@ -1,0 +1,8 @@
+{
+  "schema": "HintRequest",
+  "payload": {
+    "diagnosis_id": "diagnosis-1",
+    "level": 1.5
+  },
+  "reason": "D1：提示级别只能为整数1、2、3。"
+}

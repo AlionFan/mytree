@@ -1,0 +1,100 @@
+{
+  "provenance": {
+    "kind": "synthetic_design",
+    "source": "docs/collaboration/PRODUCT-002.md",
+    "notes": "新目标契约的设计样例，不是现有HTTP返回或真实儿童数据；所有参数是起点，待数据。"
+  },
+  "request": {
+    "schema_version": "1.0",
+    "operation": "quiz.start",
+    "request_id": "design-quiz-start",
+    "client": {
+      "type": "web",
+      "name": "contract-example",
+      "version": "1.0"
+    },
+    "subject": {
+      "profile_id": "contract_sample"
+    },
+    "input": {
+      "knowledge_id": "F1",
+      "source_wrong_card_ids": [
+        "wrong-card-1"
+      ],
+      "review_id": "review-F1-1"
+    },
+    "options": {
+      "language": "zh-CN",
+      "modalities": [
+        "text",
+        "svg"
+      ]
+    }
+  },
+  "response": {
+    "schema_version": "1.0",
+    "operation": "quiz.start",
+    "request_id": "design-quiz-start",
+    "status": "ok",
+    "verification": {
+      "level": "verified",
+      "label": "设计场景中的规则声明；不是现有接口返回"
+    },
+    "effects": [
+      {
+        "kind": "start_quiz",
+        "id": "quiz-F1-1",
+        "idempotent_replay": false
+      }
+    ],
+    "output": {
+      "quiz_id": "quiz-F1-1",
+      "knowledge_id": "F1",
+      "items": [
+        {
+          "id": "quiz-q1",
+          "prompt": "分解因式：6x+9。",
+          "difficulty_level": 1,
+          "difficulty_features": [
+            "两项一次式",
+            "整数公因数"
+          ],
+          "is_transfer": false,
+          "verification": {
+            "level": "verified",
+            "label": "设计：由服务端程序核验"
+          }
+        },
+        {
+          "id": "quiz-q2",
+          "prompt": "分解因式：4a²+8a。",
+          "difficulty_level": 2,
+          "difficulty_features": [
+            "两项多项式",
+            "共同字母因式"
+          ],
+          "is_transfer": false,
+          "verification": {
+            "level": "verified",
+            "label": "设计：由服务端程序核验"
+          }
+        },
+        {
+          "id": "quiz-q3",
+          "prompt": "两个长方形的高都为x，宽分别为x+2和3。把它们的总面积x(x+2)+3x写成一个积，并指出公共因式。",
+          "difficulty_level": 2,
+          "difficulty_features": [
+            "面积情境",
+            "共同因式",
+            "合并括号内同类项"
+          ],
+          "is_transfer": true,
+          "verification": {
+            "level": "verified",
+            "label": "设计：仅程序可核验的表达式部分用于检验"
+          }
+        }
+      ]
+    }
+  }
+}

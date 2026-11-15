@@ -1,0 +1,21 @@
+/* Camera-independent voice tutor: scoped to this workspace only. */
+#explorer-voice-layout{display:flex;flex:1;flex-direction:column;gap:12px;min-height:0;overflow:auto;overscroll-behavior:contain;padding-bottom:8px}
+#explorer-voice-layout .voice-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;flex-shrink:0;padding:14px}
+#explorer-voice-layout .voice-settings label{margin:0;font-size:12px;min-width:0}
+#explorer-voice-layout .voice-settings select{display:block;width:100%;min-width:0;min-height:44px;margin:4px 0 0;font-size:13px}
+#explorer-current-source,#explorer-source-note{grid-column:1/-1;margin:0!important;font-size:12px}
+#explorer-current-source summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+#explorer-source-detail{max-height:160px;overflow:auto;padding:8px 0;font-size:14px}
+#explorer-source-refresh{align-self:end;min-height:44px;font-size:12px}
+#explorer-voice-layout .explorer-layout{flex:none;min-height:300px}
+#explorer-voice-layout .explorer-layout>.panel{height:auto;min-height:0;overflow:visible}
+#explorer-voice-layout .explorer-controls{display:flex;flex-wrap:wrap;gap:8px}
+#explorer-voice-layout .explorer-controls>button{flex:1 1 120px;min-width:100px;min-height:44px;white-space:normal}
+#explorer-voice-layout .camera-stage{min-height:150px;max-height:300px;aspect-ratio:4/3;flex:none}
+#explorer-voice-layout .explorer-history{flex:none;max-height:230px;overflow:auto}
+#explorer-voice-layout .explorer-caption{max-height:220px;font-size:18px}
+#explorer-voice-layout #explorer-question{min-height:72px;width:100%;box-sizing:border-box}
+#explorer-voice-layout .explorer-conversation>.source-tag{display:block}
+#explorer-voice-layout #explorer-allowance{font-size:12px;margin:0}
+@media(max-width:1050px){#explorer-voice-layout .explorer-layout{display:flex;flex-direction:column;gap:12px}#explorer-voice-layout .explorer-layout>.panel{width:100%;box-sizing:border-box}}
+@media(max-height:700px){#explorer-voice-layout{gap:8px}#explorer-voice-layout .voice-settings{padding:10px}#explorer-voice-layout .explorer-controls>button{flex-basis:100px;font-size:12px;padding:8px}#explorer-source-note{line-height:1.4}}

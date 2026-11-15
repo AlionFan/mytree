@@ -1,0 +1,2875 @@
+<!doctype html>
+<html lang="en" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data:; style-src 'unsafe-inline' blob: data:; img-src blob: data:; font-src blob: data:; media-src blob: data:; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>小树同学 · Agent 与学习闭环</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+
+</head>
+<body>
+<iframe id="codex-visualization" sandbox="allow-scripts" referrerpolicy="no-referrer" title="小树同学 · Agent 与学习闭环" data-srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-visualize-standalone&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data:; style-src &#x27;unsafe-inline&#x27; blob: data:; img-src blob: data:; font-src blob: data:; media-src blob: data:; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;小树同学 · Agent 与学习闭环&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(
+    --background,
+    var(--color-background-primary, light-dark(rgb(255 255 255), rgb(24 24 24)))
+  ) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --color-background-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --card: color-mix(in oklab, var(--foreground) 5%, var(--background));
+  --card-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --popover: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255), rgb(45 45 45))
+  );
+  --popover-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --primary: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --primary-foreground: var(
+    --color-text-inverse,
+    light-dark(rgb(255 255 255), rgb(13 13 13))
+  );
+  --secondary: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%))
+  );
+  --secondary-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: var(
+    --color-text-secondary,
+    light-dark(rgb(26 28 31 / 49.4%), rgb(255 255 255 / 49.8%))
+  );
+  --accent: var(
+    --color-background-info,
+    light-dark(rgb(229 242 255), rgb(13 39 63))
+  );
+  --accent-foreground: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --destructive: var(
+    --color-text-warning,
+    light-dark(rgb(226 85 7), rgb(255 133 73))
+  );
+  --border: var(
+    --color-border-secondary,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+  --input: var(
+    --color-border-primary,
+    light-dark(
+      rgb(26 28 31 / 11.8%),
+      color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+    )
+  );
+  --ring: var(
+    --color-ring-primary,
+    light-dark(rgb(51 156 255), rgb(131 195 255 / 76%))
+  );
+  --font-size-base: var(--font-text-md-size, 16px);
+  --blue: light-dark(rgb(51 156 255), rgb(51 156 255));
+  --orange: light-dark(rgb(226 85 7), rgb(251 106 34));
+  --green: light-dark(rgb(0 162 64), rgb(64 201 119));
+  --red: light-dark(rgb(224 46 42), rgb(255 103 100));
+  --purple: light-dark(rgb(146 79 247), rgb(173 123 249));
+  --yellow: light-dark(rgb(255 195 0), rgb(255 210 64));
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans:
+    -apple-system-body, ui-sans-serif, -apple-system, system-ui, &quot;Segoe UI&quot;,
+    Helvetica, &quot;Apple Color Emoji&quot;, Arial, sans-serif, &quot;Segoe UI Emoji&quot;,
+    &quot;Segoe UI Symbol&quot;;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --icon-size: 16px;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --corner-shape: round;
+  --radius: var(--border-radius-lg, 8px);
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  /* Preserve MCP aliases for older inline renderers without creating :root cycles. */
+  --color-background-primary: var(
+    --background,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --color-text-primary: var(
+    --foreground,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --color-border-secondary: var(
+    --border,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+
+  margin: 0;
+  padding: var(--visualize-paint-gutter, 0px);
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans) !important;
+  -webkit-font-smoothing: antialiased;
+  font-size: var(--font-size-base);
+  line-height: calc(var(--font-size-base) * 1.625);
+  font-weight: var(--font-weight-normal);
+}
+
+.cursor-interaction {
+  cursor: var(--cursor-interaction, pointer);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: var(--cursor-interaction, pointer);
+  text-decoration: none;
+  text-underline-offset: 2px;
+  font-weight: inherit;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+li,
+.table {
+  font-family: var(--font-sans);
+}
+
+h1 {
+  font-size: calc(var(--font-size-base) * 1.5);
+  line-height: 1.3333333333;
+}
+
+h2 {
+  font-size: calc(var(--font-size-base) * 1.25);
+  line-height: 1.4;
+}
+h3 {
+  font-size: calc(var(--font-size-base) * 1.125);
+  line-height: 1.5555555556;
+}
+h4 {
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+}
+h5,
+h6 {
+  font-size: var(--font-size-base);
+  line-height: calc(var(--font-size-base) * 1.625);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+b,
+strong,
+th {
+  font-weight: 600;
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+pre,
+pre code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: calc(var(--font-size-base) * 0.875);
+  line-height: calc(var(--font-size-base) * 1.625);
+  font-family: var(--font-sans);
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+.table :is(th, td):not(:last-child) {
+  padding-inline-end: calc(var(--font-size-base) * 1.5);
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead :is(th, td) {
+  border-bottom-color: var(--border-strong, var(--input));
+  padding-block: calc(var(--font-size-base) / 2);
+  line-height: var(--font-size-base);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+.table tbody :is(th, td) {
+  padding-block: calc(var(--font-size-base) * 0.625);
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 8px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: var(--corner-shape);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+.widget {
+  min-width: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  box-shadow: 0 0 0 0.5px var(--border-strong, var(--border));
+  color: var(--foreground);
+  background: var(--background);
+}
+
+#widget &gt; :not(.card, .widget, .progress) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  border: 1px solid var(--border);
+  corner-shape: var(--corner-shape);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+  font-family: var(--font-sans);
+  padding: 5px 12px;
+  border-color: color-mix(
+    in oklab,
+    light-dark(var(--primary-foreground), var(--foreground)) 5%,
+    transparent
+  );
+  border-radius: var(--radius-2xl);
+  color: light-dark(var(--primary-foreground), var(--foreground));
+  background: light-dark(var(--foreground), var(--popover));
+  box-shadow: 0 8px 18px rgb(15 23 42 / 20%);
+  letter-spacing: -0.15px;
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+hr {
+  width: 100%;
+  height: 1px;
+  margin-block: 6px;
+  border: 0;
+  background: var(--border);
+}
+
+.nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress {
+  display: flex;
+  height: 8px;
+  margin-block: calc((var(--line-height-normal, 1.5em) - 8px) / 2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+}
+
+.progress-bar:only-child {
+  border-radius: var(--radius-full);
+}
+
+.progress-bar {
+  height: 100%;
+  flex-shrink: 0;
+  border: 0;
+  background: var(--viz-series-1);
+}
+
+.viz-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  color: color-mix(in srgb, var(--foreground) 40%, var(--muted-foreground));
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  font-family: var(--font-sans);
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: var(--font-weight-normal);
+  line-height: 1;
+}
+
+small,
+.text-small {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.nav-link,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+/* Match inline alignment without overriding a containing flex or grid layout. */
+.btn,
+.nav-link,
+.form-control,
+.form-select,
+.form-range,
+.form-check {
+  vertical-align: middle;
+}
+
+.btn,
+.nav-link {
+  --btn-size: calc(12px + 2 * var(--control-spacing, 12px));
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  corner-shape: var(--corner-shape);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: inherit;
+  font-family: var(--font-sans);
+  height: fit-content;
+  min-height: var(--btn-size);
+  padding-inline: var(--control-spacing, 12px);
+  border-color: transparent;
+  border-radius: var(--radius-full);
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: var(--font-weight-normal);
+  line-height: 18px;
+}
+
+.btn {
+  border-color: var(--border);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+}
+
+/* Codex Button size=&quot;compact&quot;; appearance stays with the button variant. */
+.btn-sm {
+  --btn-size: 24px;
+  padding-inline: 8px;
+  font-size: calc(var(--font-size-base) * 12 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 12 / 16), 1px);
+  line-height: 16px;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: var(--cursor-interaction, pointer);
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover {
+  background: light-dark(
+    color-mix(in srgb, var(--foreground) 5.5%, transparent),
+    color-mix(in srgb, var(--foreground) 8%, transparent)
+  );
+}
+
+.nav-link:not(:disabled):not([aria-disabled=&quot;true&quot;]):hover {
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.btn-primary {
+  border-color: var(--border);
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: border-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: border-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--muted-foreground);
+  background: light-dark(
+    color-mix(in srgb, var(--foreground) 5.5%, transparent),
+    color-mix(in srgb, var(--foreground) 8%, transparent)
+  );
+}
+
+.nav-pills .nav-link {
+  min-width: 0;
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.nav-justified .nav-link {
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.nav-pills .nav-link.active {
+  color: var(--foreground);
+  background: var(--muted);
+}
+
+/* Shared preview chrome; product styles stay inside each variant. */
+.viz-dotted-background {
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--foreground) 14%, transparent) 0.8px,
+    transparent 0.8px
+  );
+  background-position: center;
+  background-size: 16px 16px;
+}
+
+.viz-carousel {
+  position: relative;
+  min-width: 0;
+}
+
+.viz-carousel:has(&gt; .viz-carousel-controls) {
+  min-height: calc(60px + var(--viz-carousel-picker-height, 0px));
+  padding-bottom: 60px;
+}
+
+.viz-carousel &gt; [data-variant][hidden] {
+  display: none !important;
+}
+
+.viz-carousel &gt; [data-variant] {
+  isolation: isolate;
+}
+
+.viz-carousel-controls {
+  --viz-carousel-hover: light-dark(
+    color-mix(in srgb, var(--foreground) 5.4%, transparent),
+    color-mix(in srgb, var(--foreground) 7.8%, transparent)
+  );
+  position: absolute;
+  z-index: 2;
+  bottom: 8px;
+  left: 50%;
+  display: flex;
+  width: max-content;
+  /* Leave room for the host&#x27;s design-controls launcher at the trailing edge. */
+  max-width: calc(100% - 96px);
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-sans);
+  /* Match the settings dropdown chrome independently of the content font size. */
+  font-size: 13px;
+  font-weight: var(--font-weight-normal);
+  line-height: 18px;
+  transform: translateX(-50%);
+  user-select: none;
+}
+
+/* Keep authored mockup button styles out of the shared carousel chrome. */
+.viz-carousel-controls button,
+.viz-carousel-picker &gt; summary {
+  display: flex !important;
+  height: auto !important;
+  min-height: 30px;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px;
+  padding: 0 6px !important;
+  -webkit-app-region: no-drag;
+  border: 0 !important;
+  border-radius: 14px !important;
+  color: inherit !important;
+  background: transparent !important;
+  font: inherit !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.viz-carousel-controls &gt; button,
+.viz-carousel-picker &gt; summary {
+  position: relative;
+  isolation: isolate;
+}
+
+.viz-carousel-controls &gt; button {
+  --icon-size: 16px;
+  width: 30px !important;
+  padding: 0 !important;
+}
+
+.viz-carousel-picker &gt; summary {
+  padding-inline: 12px !important;
+}
+
+.viz-carousel-controls .viz-carousel-caret {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin: 0;
+  color: inherit;
+  transform: rotate(180deg);
+}
+
+.viz-carousel-controls &gt; button &gt; svg,
+.viz-carousel-controls .viz-carousel-caret,
+.viz-carousel-count {
+  opacity: 0.5;
+}
+
+.viz-carousel-controls &gt; button::before,
+.viz-carousel-picker &gt; summary::before {
+  position: absolute;
+  z-index: -1;
+  inset: 3px;
+  border-radius: 12px;
+  content: &quot;&quot;;
+  pointer-events: none;
+}
+
+.viz-carousel-controls &gt; button:hover::before,
+.viz-carousel-picker &gt; summary:hover::before {
+  background: var(--viz-carousel-hover);
+}
+
+.viz-carousel-controls &gt; button,
+.viz-carousel-controls [data-lucide],
+.viz-carousel-controls .lucide {
+  flex-shrink: 0;
+}
+
+.viz-carousel-picker {
+  min-width: 0;
+}
+
+.viz-carousel-picker &gt; summary {
+  min-width: 0;
+  list-style: none;
+}
+
+.viz-carousel-picker &gt; summary::-webkit-details-marker {
+  display: none;
+}
+
+.viz-carousel-count {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.viz-carousel-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viz-carousel-options {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 4px);
+  left: 0;
+  display: flex;
+  max-height: 240px;
+  flex-direction: column;
+  gap: 2px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--background);
+  box-shadow: 0 4px 12px light-dark(rgb(0 0 0 / 6%), rgb(0 0 0 / 25%));
+}
+
+.viz-carousel-options &gt; button {
+  border-radius: max(0px, calc(var(--radius-lg) - 5px)) !important;
+  width: 100% !important;
+  min-height: 28px;
+  justify-content: flex-start !important;
+  padding: 4px 8px !important;
+  font-size: var(--font-size-small) !important;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.viz-carousel-options &gt; [aria-current=&quot;true&quot;],
+.viz-carousel-options &gt; button:hover {
+  background: var(--viz-carousel-hover) !important;
+}
+
+.btn:disabled,
+.nav-link:disabled,
+.nav-link[aria-disabled=&quot;true&quot;] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  height: calc(12px + 2 * var(--control-spacing, 12px));
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  padding-inline: calc(4px + var(--control-spacing, 12px) / 2);
+  border-color: var(--input);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--popover) 96%, transparent);
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.4285714286;
+}
+.form-control:is(
+  [type=&quot;file&quot;],
+  [type=&quot;date&quot;],
+  [type=&quot;datetime-local&quot;],
+  [type=&quot;month&quot;],
+  [type=&quot;week&quot;],
+  [type=&quot;color&quot;]
+) {
+  height: calc(12px + 2 * var(--control-spacing, 12px));
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  line-height: 18px;
+}
+.form-control:is(
+  [type=&quot;date&quot;],
+  [type=&quot;datetime-local&quot;],
+  [type=&quot;month&quot;],
+  [type=&quot;week&quot;]
+) {
+  padding-inline: var(--control-spacing, 12px);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+  padding: 0;
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+  min-height: calc(10px + 2 * var(--control-spacing, 12px));
+  padding-inline: var(--control-spacing, 12px);
+  margin-inline-end: var(--control-spacing, 12px);
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: calc(12px + 2 * var(--control-spacing, 12px));
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: var(--corner-shape);
+}
+
+textarea.form-control {
+  height: auto;
+  resize: vertical;
+  min-height: 96px;
+  padding: 8px 10px;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: none;
+}
+.form-control:disabled {
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  opacity: 1;
+}
+.form-control[aria-invalid=&quot;true&quot;] {
+  border-color: var(--red);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--red) 20%, transparent);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: fit-content;
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  margin: 0;
+  /* The secondary icon role is 14px at compact density and 16px at web density. */
+  --icon-size: calc(10px + var(--control-spacing, 12px) / 2);
+  /* Settings dropdowns retain a 12px inset and a 4px text-to-chevron gap. */
+  padding: 0 calc(16px + var(--icon-size)) 0 12px;
+  outline: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(
+      45deg,
+      transparent calc(50% - 0.6px),
+      var(--muted-foreground) calc(50% - 0.6px) calc(50% + 0.6px),
+      transparent calc(50% + 0.6px)
+    ),
+    linear-gradient(
+      135deg,
+      transparent calc(50% - 0.6px),
+      var(--muted-foreground) calc(50% - 0.6px) calc(50% + 0.6px),
+      transparent calc(50% + 0.6px)
+    );
+  background-position:
+    calc(100% - 12px - var(--icon-size) / 2) 50%,
+    calc(100% - 12px - var(--icon-size) * 0.18) 50%;
+  background-repeat: no-repeat;
+  background-size: calc(var(--icon-size) * 0.32) calc(var(--icon-size) * 0.32);
+  cursor: var(--cursor-interaction, default);
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: var(--font-weight-normal);
+  line-height: 18px;
+}
+
+.form-select :is(option, optgroup) {
+  color: var(--popover-foreground);
+  background-color: var(--popover);
+}
+
+.form-select :is(option, optgroup):disabled {
+  color: var(--muted-foreground);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: light-dark(
+    color-mix(in srgb, var(--foreground) 5.5%, transparent),
+    color-mix(in srgb, var(--foreground) 8%, transparent)
+  );
+}
+
+.form-select:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+.form-select:disabled {
+  opacity: 0.4;
+}
+
+.form-check {
+  display: flex;
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  corner-shape: round;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  width: calc(10px + var(--control-spacing, 12px) / 2);
+  height: calc(10px + var(--control-spacing, 12px) / 2);
+  border-color: var(--border-strong, var(--input));
+  border-radius: calc(var(--radius-sm) / 2);
+  background-color: transparent;
+  color: var(--foreground);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:is(:checked, :indeterminate) {
+  border-color: var(--border-strong, var(--input));
+  background-color: color-mix(in srgb, var(--popover) 96%, transparent);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+  background-color: var(--foreground);
+}
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:indeterminate::before {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 65%;
+  height: 6.65%;
+  margin: auto;
+  border-radius: var(--radius-full);
+  background: var(--foreground);
+  mask: none;
+  content: &quot;&quot;;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  border-radius: var(--radius-full);
+  width: 16px;
+  height: 16px;
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--input);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 0;
+  background: radial-gradient(
+    circle,
+    var(--primary-foreground) 0 3px,
+    var(--foreground) 3px
+  );
+  box-shadow: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:focus-visible {
+  border-color: var(--ring);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+.form-check:not(.form-switch) .form-check-input[type=&quot;radio&quot;]:disabled,
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;radio&quot;]:disabled
+  + .form-check-label {
+  opacity: 0.5;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+  border-color: #fff;
+  background: #fff;
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--blue);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+  outline: none;
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  accent-color: var(--primary);
+  height: calc(12px + 2 * var(--control-spacing, 12px));
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  outline: none;
+  border-radius: var(--radius-full);
+  color: var(--foreground);
+  background: transparent;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  background: var(--form-range-track, var(--border));
+  height: 2px;
+  border-radius: var(--radius-full);
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  margin-top: -9px;
+  border-color: transparent;
+  background: currentColor;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Outline the native track and thumb, preserving the larger input hit area. */
+.form-range:focus-visible::-webkit-slider-runnable-track {
+  outline: 2px auto Highlight;
+  outline-color: -webkit-focus-ring-color;
+}
+
+.form-range::-moz-range-track {
+  background: var(--form-range-track, var(--border));
+  height: 2px;
+  border-radius: var(--radius-full);
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  border-color: transparent;
+  background: currentColor;
+  box-shadow: var(--shadow-sm);
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  outline: 2px solid Highlight;
+  outline-offset: 2px;
+}
+
+.form-range:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+  [aria-pressed=&quot;true&quot;],
+  [aria-selected=&quot;true&quot;],
+  .is-selected
+) {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--blue);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible {
+  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.viz-carousel-controls :is(button, summary):focus-visible {
+  outline: 2px solid var(--ring) !important;
+  outline-offset: 2px !important;
+}
+
+/* Web recipes are the default, including on renderers without inline style queries. */
+@supports (border-radius: if(style(--corner-shape: round): 1px; else: 2px)) {
+  /* Match the host&#x27;s proportional text-sm scale at every text preference. */
+  .tooltip,
+  .viz-badge,
+  .btn,
+  .nav-link,
+  .form-control,
+  .form-select {
+    font-size: if(
+      style(--corner-shape: round): round(
+          nearest,
+          calc(var(--font-size-base) * 14 / 16),
+          1px
+        );
+        else: round(nearest, calc(var(--font-size-base) * 13 / 14), 1px)
+    );
+  }
+
+  .btn-sm {
+    font-size: if(
+      style(--corner-shape: round): round(
+          nearest,
+          calc(var(--font-size-base) * 12 / 16),
+          1px
+        );
+        else: round(nearest, calc(var(--font-size-base) * 12 / 14), 1px)
+    );
+  }
+
+  .btn,
+  .nav-link,
+  .form-select {
+    border-radius: if(
+      style(--corner-shape: round): var(--radius-full); else: var(--radius-lg)
+    );
+  }
+
+  .form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+    border-radius: if(
+      style(--corner-shape: round): calc(var(--radius-sm) / 2);
+        else: calc(var(--radius-lg) * 0.4)
+    );
+  }
+
+  .tooltip {
+    font-weight: if(
+      style(--corner-shape: round): 600; else: var(--font-weight-normal)
+    );
+  }
+}
+
+@media (pointer: coarse) {
+  .viz-carousel:has(&gt; .viz-carousel-controls) {
+    min-height: calc(76px + var(--viz-carousel-picker-height, 0px));
+    padding-bottom: 76px;
+  }
+
+  .btn,
+  .nav-link,
+  .viz-carousel-controls button,
+  .viz-carousel-picker &gt; summary,
+  .form-control,
+  .form-select {
+    --btn-size: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Keep small-screen WebKit from zooming when a text field receives focus. */
+  .form-control,
+  .form-select {
+    font-size: max(16px, calc(var(--font-size-base) * 14 / 16));
+    font-size: max(
+      16px,
+      round(nearest, calc(var(--font-size-base) * 14 / 16), 1px)
+    );
+  }
+  .form-control:is(
+    [type=&quot;file&quot;],
+    [type=&quot;date&quot;],
+    [type=&quot;datetime-local&quot;],
+    [type=&quot;month&quot;],
+    [type=&quot;week&quot;],
+    [type=&quot;time&quot;],
+    [type=&quot;color&quot;]
+  ) {
+    height: 44px;
+    min-height: 44px;
+    font-size: max(16px, calc(var(--font-size-base) * 14 / 16));
+    font-size: max(
+      16px,
+      round(nearest, calc(var(--font-size-base) * 14 / 16), 1px)
+    );
+  }
+
+  .form-control[type=&quot;file&quot;]::file-selector-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .form-control-color[type=&quot;color&quot;] {
+    width: 44px;
+    height: 44px;
+  }
+
+  .form-control:is(
+    [type=&quot;date&quot;],
+    [type=&quot;datetime-local&quot;],
+    [type=&quot;month&quot;],
+    [type=&quot;time&quot;],
+    [type=&quot;week&quot;]
+  ) {
+    min-width: 0;
+    max-width: 100%;
+    padding-block: 8px;
+  }
+
+  .form-check {
+    min-height: 44px;
+    padding-inline: 15px;
+  }
+
+  .form-check-input {
+    position: relative;
+  }
+
+  .form-check-input::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    content: &quot;&quot;;
+    transform: translate(-50%, -50%);
+  }
+
+  .form-check-label {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .form-range {
+    height: 44px;
+    touch-action: pan-y;
+  }
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+/* Model-authored chart rules can otherwise stretch icons after these styles load. */
+svg.lucide {
+  display: block;
+  width: var(--icon-size) !important;
+  height: var(--icon-size) !important;
+  flex: none;
+  margin: 0 !important;
+  stroke-width: 1.6;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;script type=&quot;application/json&quot; id=&quot;codex-visualization-widget-state&quot;&gt;__CODEX_VISUALIZATION_WIDGET_STATE__&lt;/script&gt;
+&lt;script&gt;(() =&gt; {
+  const root = document.documentElement;
+  const mediaQuery = globalThis.matchMedia(&quot;(prefers-color-scheme: dark)&quot;);
+  const apply = Reflect.apply;
+  const isArray = Array.isArray;
+  const hasOwn = Object.hasOwn;
+  const parentWindow = globalThis.parent;
+  const stringify = JSON.stringify;
+  const parse = JSON.parse;
+  const encode = TextEncoder.prototype.encode.bind(new TextEncoder());
+  const initialStateElement = document.getElementById(
+    &quot;codex-visualization-widget-state&quot;,
+  );
+  const initialGlobals = parse(initialStateElement?.textContent ?? &quot;{}&quot;);
+  initialStateElement?.remove();
+  /** @type {Record&lt;string, unknown&gt; | null} */
+  let state = initialGlobals.widgetState ?? null;
+  const statePersistence = initialGlobals.statePersistence ?? &quot;none&quot;;
+  let nextStateRequestId = 0;
+  /** @type {Map&lt;number, { resolve: () =&gt; void; reject: (error: Error) =&gt; void; timeout: ReturnType&lt;typeof globalThis.setTimeout&gt;; serializedState: string }&gt;} */
+  const pendingStateWrites = new Map();
+  const persistenceError = () =&gt;
+    Object.assign(
+      new Error(&quot;The host could not persist the widget state update&quot;),
+      {
+        code: -32000,
+        data: { code: &quot;widget_state_persistence_failed&quot;, retryable: false },
+      },
+    );
+  /**
+   * @param {object} prototype
+   * @param {string} property
+   */
+  const getPrototypeGetter = (prototype, property) =&gt; {
+    // oxlint-disable-next-line typescript/unbound-method -- invoked through captured Reflect.apply
+    const getter = Object.getOwnPropertyDescriptor(prototype, property)?.get;
+    if (getter == null) {
+      throw new Error(`Missing ${property} getter`);
+    }
+    return getter;
+  };
+  const getMessageData = getPrototypeGetter(MessageEvent.prototype, &quot;data&quot;);
+  const getMessagePorts = getPrototypeGetter(MessageEvent.prototype, &quot;ports&quot;);
+  const getMessageSource = getPrototypeGetter(MessageEvent.prototype, &quot;source&quot;);
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const addHostMessageListener = MessagePort.prototype.addEventListener;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const postHostMessage = MessagePort.prototype.postMessage;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const startHostPort = MessagePort.prototype.start;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const stopMessagePropagation = Event.prototype.stopImmediatePropagation;
+  /** @type {MessagePort | null} */
+  let hostPort = null;
+  const postToHost = (type, payload) =&gt; {
+    if (hostPort != null) {
+      apply(postHostMessage, hostPort, [{ type, ...payload }]);
+    }
+  };
+  const openExternal = ({ href }) =&gt; {
+    if (globalThis.navigator.userActivation?.isActive === true) {
+      postToHost(&quot;open-external&quot;, { href });
+    }
+  };
+  const sendFollowUpMessage = ({ context, prompt, title }) =&gt; {
+    if (globalThis.navigator.userActivation?.isActive === true) {
+      postToHost(&quot;follow-up&quot;, { context, prompt, title });
+    }
+    return Promise.resolve();
+  };
+  /**
+   * @param {Record&lt;string, unknown&gt; | ((previous: Record&lt;string, unknown&gt; | null) =&gt; Record&lt;string, unknown&gt;)} next
+   * @returns {Promise&lt;void&gt;}
+   */
+  const setWidgetState = async (next) =&gt; {
+    const nextState = typeof next === &quot;function&quot; ? next(state) : next;
+    if (
+      nextState == null ||
+      typeof nextState !== &quot;object&quot; ||
+      isArray(nextState)
+    ) {
+      throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+    }
+    const inputState = stringify(
+      nextState,
+      (_key, /** @type {unknown} */ value) =&gt; {
+        if (
+          typeof value === &quot;undefined&quot; ||
+          typeof value === &quot;function&quot; ||
+          typeof value === &quot;symbol&quot; ||
+          (typeof value === &quot;number&quot; &amp;&amp; !Number.isFinite(value))
+        ) {
+          throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+        }
+        return value;
+      },
+    );
+    const parsedState = parse(inputState);
+    if (
+      parsedState == null ||
+      typeof parsedState !== &quot;object&quot; ||
+      isArray(parsedState)
+    ) {
+      throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+    }
+    const storedState = {
+      modelContent: null,
+      privateContent: null,
+      ...parsedState,
+    };
+    const serializedState = stringify(storedState);
+    if (encode(serializedState).length &gt; 16 * 1024) {
+      throw new TypeError(
+        &quot;Widget state must be a JSON object of at most 16 KiB&quot;,
+      );
+    }
+    if (
+      hasOwn(storedState, &quot;imageIds&quot;) &amp;&amp;
+      (!isArray(storedState.imageIds) ||
+        storedState.imageIds.some(
+          (/** @type {unknown} */ id) =&gt; typeof id !== &quot;string&quot;,
+        ))
+    ) {
+      throw new TypeError(&quot;Widget state imageIds must be an array of strings&quot;);
+    }
+    if (storedState.imageIds?.length &gt; 0) {
+      throw Object.assign(
+        new TypeError(&quot;Visualization state does not support image attachments&quot;),
+        { code: -32602, data: { code: &quot;images_unsupported&quot; } },
+      );
+    }
+    state = storedState;
+    globalThis.openai.widgetState = state;
+    globalThis.dispatchEvent(
+      new CustomEvent(&quot;openai:set_globals&quot;, {
+        detail: { globals: { widgetState: state } },
+      }),
+    );
+    if (statePersistence === &quot;none&quot;) {
+      throw persistenceError();
+    }
+    const id = ++nextStateRequestId;
+    return new Promise((resolve, reject) =&gt; {
+      const timeout = globalThis.setTimeout(() =&gt; {
+        pendingStateWrites.delete(id);
+        reject(persistenceError());
+      }, 30_000);
+      pendingStateWrites.set(id, { resolve, reject, timeout, serializedState });
+      postToHost(&quot;widget-state-write&quot;, { id, state: serializedState });
+    });
+  };
+  const mockElement = document.getElementById(&quot;codex-connector-mocks&quot;);
+  const connectorGlobals = {};
+  if (mockElement != null) {
+    const values = new Map(Object.entries(parse(mockElement.textContent)));
+    mockElement.remove();
+    connectorGlobals.visualizationData = {
+      updates: Array.from(values, ([name, value]) =&gt; ({
+        name,
+        revision: 1,
+        state: &quot;ready&quot;,
+        value: { type: &quot;json&quot;, value },
+      })),
+    };
+    connectorGlobals.visualization = {
+      /** @param {string} name @param {(value: unknown) =&gt; void} callback */
+      onData(name, callback) {
+        if (typeof callback !== &quot;function&quot;) {
+          throw new TypeError(&quot;onData requires a callback&quot;);
+        }
+        try {
+          callback(values.get(name));
+        } catch (error) {
+          // oxlint-disable-next-line no-console -- Keep authored callback failures local.
+          console.error(&quot;Live visualization data callback failed&quot;, error);
+        }
+        // A static preview delivers the current fixture once per subscription.
+        return () =&gt; {};
+      },
+    };
+  }
+  const syncTheme = () =&gt; {
+    const theme = mediaQuery.matches ? &quot;dark&quot; : &quot;light&quot;;
+    root.dataset.theme = theme;
+    globalThis.openai = {
+      ...globalThis.openai,
+      ...connectorGlobals,
+      openExternal,
+      sendFollowUpMessage,
+      setWidgetState,
+      theme,
+      visualizationStyleVariables: {},
+      visualizationTheme: theme,
+      widgetState: state,
+      statePersistence,
+      stateModelContext: &quot;none&quot;,
+    };
+    globalThis.dispatchEvent(
+      new CustomEvent(&quot;openai:set_globals&quot;, {
+        detail: { globals: globalThis.openai },
+      }),
+    );
+  };
+  const sendHeight = () =&gt; {
+    postToHost(&quot;height&quot;, {
+      height: Math.ceil(
+        Math.max(
+          document.body.scrollHeight,
+          document.body.getBoundingClientRect().height,
+        ),
+      ),
+    });
+  };
+
+  globalThis.addEventListener(
+    &quot;message&quot;,
+    (event) =&gt; {
+      const data = apply(getMessageData, event, []);
+      const ports = apply(getMessagePorts, event, []);
+      const source = apply(getMessageSource, event, []);
+      if (
+        hostPort != null ||
+        source !== parentWindow ||
+        typeof data !== &quot;object&quot; ||
+        data?.type !== &quot;codex-visualization-initialize&quot; ||
+        !isArray(ports) ||
+        ports.length !== 1
+      ) {
+        return;
+      }
+      apply(stopMessagePropagation, event, []);
+      const nextHostPort = ports[0];
+      try {
+        apply(addHostMessageListener, nextHostPort, [
+          &quot;message&quot;,
+          (event) =&gt; {
+            const data = apply(getMessageData, event, []);
+            if (typeof data === &quot;object&quot; &amp;&amp; data?.type === &quot;measure&quot;) {
+              sendHeight();
+            } else if (
+              typeof data === &quot;object&quot; &amp;&amp;
+              data?.type === &quot;widget-state-result&quot;
+            ) {
+              /** @type {unknown} */
+              const id = data.id;
+              if (typeof id !== &quot;number&quot;) {
+                return;
+              }
+              const pending = pendingStateWrites.get(id);
+              if (pending != null) {
+                pendingStateWrites.delete(id);
+                globalThis.clearTimeout(pending.timeout);
+                if (data.ok === true) {
+                  pending.resolve();
+                } else {
+                  pending.reject(persistenceError());
+                }
+              }
+            }
+          },
+        ]);
+        apply(startHostPort, nextHostPort, []);
+      } catch {
+        return;
+      }
+      hostPort = nextHostPort;
+      for (const [id, { serializedState }] of pendingStateWrites) {
+        postToHost(&quot;widget-state-write&quot;, { id, state: serializedState });
+      }
+      sendHeight();
+    },
+    { capture: true },
+  );
+  document.currentScript?.remove();
+  mediaQuery.addEventListener(&quot;change&quot;, syncTheme);
+  globalThis.addEventListener(&quot;click&quot;, (event) =&gt; {
+    if (event.defaultPrevented) {
+      return;
+    }
+    let element = null;
+    if (event.target instanceof globalThis.Element) {
+      element = event.target;
+    } else if (event.target instanceof globalThis.Node) {
+      element = event.target.parentElement;
+    }
+    const link = element?.closest(&quot;a[href]&quot;);
+    const href = link?.getAttribute(&quot;href&quot;);
+    if (href == null) {
+      return;
+    }
+    if (href.startsWith(&quot;#&quot;)) {
+      let id;
+      try {
+        id = decodeURIComponent(href.slice(1));
+      } catch {
+        return;
+      }
+      const target = id.length === 0 ? root : document.getElementById(id);
+      if (
+        target == null ||
+        globalThis.navigator.userActivation?.isActive !== true
+      ) {
+        return;
+      }
+      event.preventDefault();
+      postToHost(&quot;scroll-to&quot;, {
+        top: target.getBoundingClientRect().top + globalThis.scrollY,
+      });
+      return;
+    }
+    event.preventDefault();
+    openExternal({ href });
+  });
+  new ResizeObserver(sendHeight).observe(document.body);
+  syncTheme();
+})();
+&lt;/script&gt;
+&lt;div id=&quot;hks-agent-harness&quot;&gt;
+  &lt;div class=&quot;viz-row ah-heading&quot;&gt;&lt;h2&gt;错题 → 复习 → 孩子的知识树&lt;/h2&gt;&lt;span class=&quot;viz-badge&quot;&gt;B阶段 · 独立复验中&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;nav nav-pills&quot; role=&quot;tablist&quot; aria-label=&quot;架构视图&quot;&gt;
+    &lt;button type=&quot;button&quot; class=&quot;nav-link active&quot; id=&quot;ah-tab-system&quot; role=&quot;tab&quot; aria-controls=&quot;ah-system&quot; aria-selected=&quot;true&quot;&gt;整体调用&lt;/button&gt;
+    &lt;button type=&quot;button&quot; class=&quot;nav-link&quot; id=&quot;ah-tab-runtime&quot; role=&quot;tab&quot; aria-controls=&quot;ah-runtime&quot; aria-selected=&quot;false&quot;&gt;Harness 内部&lt;/button&gt;
+    &lt;button type=&quot;button&quot; class=&quot;nav-link&quot; id=&quot;ah-tab-contract&quot; role=&quot;tab&quot; aria-controls=&quot;ah-contract&quot; aria-selected=&quot;false&quot;&gt;输入与输出&lt;/button&gt;
+    &lt;button type=&quot;button&quot; class=&quot;nav-link&quot; id=&quot;ah-tab-growth&quot; role=&quot;tab&quot; aria-controls=&quot;ah-growth&quot; aria-selected=&quot;false&quot;&gt;成长闭环&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;ah-clients&quot; role=&quot;group&quot; aria-label=&quot;调用 Agent 的系统&quot;&gt;
+    &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-client=&quot;web&quot; aria-pressed=&quot;true&quot;&gt;网页&lt;/button&gt;
+    &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-client=&quot;android&quot; aria-pressed=&quot;false&quot;&gt;Android&lt;/button&gt;
+    &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-client=&quot;esp32&quot; aria-pressed=&quot;false&quot;&gt;硬件设备&lt;/button&gt;
+    &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-client=&quot;tool&quot; aria-pressed=&quot;false&quot;&gt;AI 工具&lt;/button&gt;
+    &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-client=&quot;other&quot; aria-pressed=&quot;false&quot;&gt;其他系统&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;div id=&quot;ah-system&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;ah-tab-system&quot;&gt;
+    &lt;div class=&quot;ah-row ah-cycle&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-operation=&quot;study&quot;&gt;AI 整理错题卡&lt;/button&gt;&lt;span aria-hidden=&quot;true&quot;&gt;→&lt;/span&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-operation=&quot;review.today&quot;&gt;主动复习待办&lt;/button&gt;&lt;span aria-hidden=&quot;true&quot;&gt;→&lt;/span&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-operation=&quot;card.unlock&quot;&gt;U1～U5 检验 · 解锁知识卡&lt;/button&gt;&lt;span aria-hidden=&quot;true&quot;&gt;→&lt;/span&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-operation=&quot;tree.move&quot;&gt;孩子编排知识树&lt;/button&gt;&lt;/div&gt;
+    &lt;div class=&quot;ah-arrow text-small&quot;&gt;统一任务请求 ↓&lt;/div&gt;
+    &lt;div class=&quot;ah-row&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-node=&quot;adapter&quot;&gt;调用方适配器&lt;/button&gt;&lt;span aria-hidden=&quot;true&quot;&gt;→&lt;/span&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-node=&quot;contract&quot;&gt;统一调用契约&lt;/button&gt;&lt;/div&gt;
+    &lt;div class=&quot;ah-arrow text-small&quot;&gt;↓&lt;/div&gt;
+    &lt;div class=&quot;ah-row&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;btn btn-primary&quot; data-node=&quot;agent&quot;&gt;领域 Agent&lt;/button&gt;&lt;span aria-hidden=&quot;true&quot;&gt;↔&lt;/span&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-node=&quot;harness&quot;&gt;Harness 运行边界&lt;/button&gt;&lt;/div&gt;
+    &lt;div class=&quot;ah-arrow text-small&quot;&gt;工具与资源调用 ↓&lt;/div&gt;
+    &lt;div class=&quot;ah-resources&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-node=&quot;model&quot;&gt;模型 · GPT 读图&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-node=&quot;tools&quot;&gt;校验 / 教学工具&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-node=&quot;storage&quot;&gt;会话 / 学习档案&lt;/button&gt;&lt;/div&gt;
+    &lt;div class=&quot;ah-arrow text-small&quot;&gt;结构化结果 ↑ 返回原调用方&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div id=&quot;ah-runtime&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;ah-tab-runtime&quot; hidden&gt;
+    &lt;div class=&quot;ah-arrow text-small&quot;&gt;请求进入 Harness ↓&lt;/div&gt;
+    &lt;div class=&quot;ah-resources&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-gate=&quot;H0&quot;&gt;H0 输入边界&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-gate=&quot;H1&quot;&gt;H1 结构校验&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-gate=&quot;H2&quot;&gt;H2 数学核验&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-gate=&quot;H3&quot;&gt;H3 教学法&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-gate=&quot;H4&quot;&gt;H4 口吻&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-gate=&quot;H5&quot;&gt;H5 安全&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-gate=&quot;H6&quot;&gt;H6 语音口语化&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-gate=&quot;H7&quot;&gt;H7 读图依据&lt;/button&gt;&lt;/div&gt;
+    &lt;div class=&quot;ah-arrow text-small&quot;&gt;约束 Agent 的每次执行 ↓&lt;/div&gt;
+    &lt;div class=&quot;ah-row&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;btn btn-primary&quot; data-node=&quot;agent&quot;&gt;领域工作流 / Agent&lt;/button&gt;&lt;span aria-hidden=&quot;true&quot;&gt;↔&lt;/span&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-node=&quot;tools&quot;&gt;受控工具适配器&lt;/button&gt;&lt;/div&gt;
+    &lt;div class=&quot;ah-arrow text-small&quot;&gt;结果检查与返回 ↓&lt;/div&gt;
+    &lt;div class=&quot;ah-resources&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-node=&quot;quality&quot;&gt;数学与教学质检&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-node=&quot;commit&quot;&gt;确认与副作用&lt;/button&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-node=&quot;trace&quot;&gt;运行记录与评测&lt;/button&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div id=&quot;ah-contract&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;ah-tab-contract&quot; hidden&gt;
+    &lt;div class=&quot;viz-controls&quot;&gt;&lt;label class=&quot;form-label&quot; for=&quot;ah-operation&quot;&gt;操作&lt;select class=&quot;form-select&quot; id=&quot;ah-operation&quot; aria-label=&quot;查看操作的输入输出&quot;&gt;&lt;/select&gt;&lt;/label&gt;&lt;span id=&quot;ah-origin&quot; class=&quot;viz-badge&quot;&gt;&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;ah-contract-grid&quot;&gt;
+      &lt;div&gt;&lt;h3&gt;输入&lt;/h3&gt;&lt;pre&gt;&lt;code id=&quot;ah-request&quot;&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+      &lt;div&gt;&lt;h3&gt;输出&lt;/h3&gt;&lt;pre&gt;&lt;code id=&quot;ah-response&quot;&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div id=&quot;ah-growth&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;ah-tab-growth&quot; hidden&gt;
+    &lt;div class=&quot;ah-row ah-cycle&quot; role=&quot;group&quot; aria-label=&quot;复习习惯四阶段&quot;&gt;
+      &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-habit=&quot;trigger&quot; aria-pressed=&quot;true&quot;&gt;触发 · 错题与复习任务&lt;/button&gt;&lt;span aria-hidden=&quot;true&quot;&gt;→&lt;/span&gt;
+      &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-habit=&quot;action&quot; aria-pressed=&quot;false&quot;&gt;行动 · 适度挑战&lt;/button&gt;&lt;span aria-hidden=&quot;true&quot;&gt;→&lt;/span&gt;
+      &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-habit=&quot;reward&quot; aria-pressed=&quot;false&quot;&gt;酬赏 · 卡片与树成长&lt;/button&gt;&lt;span aria-hidden=&quot;true&quot;&gt;→&lt;/span&gt;
+      &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-habit=&quot;investment&quot; aria-pressed=&quot;false&quot;&gt;投入 · 笔记与知识关系&lt;/button&gt;&lt;span aria-hidden=&quot;true&quot;&gt;↺&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;ah-row&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-operation=&quot;quiz.start&quot;&gt;三题检验&lt;/button&gt;&lt;span aria-hidden=&quot;true&quot;&gt;→&lt;/span&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-operation=&quot;card.unlock&quot;&gt;全部条件通过 · 解锁&lt;/button&gt;&lt;span aria-hidden=&quot;true&quot;&gt;→&lt;/span&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-operation=&quot;growth.get&quot;&gt;规模 + 茂盛度 + 关联&lt;/button&gt;&lt;span aria-hidden=&quot;true&quot;&gt;→&lt;/span&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-operation=&quot;leaderboard.get&quot;&gt;小组每周成长榜&lt;/button&gt;&lt;/div&gt;
+    &lt;div class=&quot;ah-arrow&quot;&gt;&lt;span class=&quot;viz-badge&quot;&gt;起点 · 待数据&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;ah-row&quot;&gt;&lt;span&gt;知识卡 +10 / 张&lt;/span&gt;&lt;span aria-hidden=&quot;true&quot;&gt;+&lt;/span&gt;&lt;span&gt;间隔复习 +3 / 次&lt;/span&gt;&lt;span aria-hidden=&quot;true&quot;&gt;+&lt;/span&gt;&lt;span&gt;合理关联 +2 / 条&lt;/span&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div id=&quot;ah-detail&quot; class=&quot;ah-detail text-small&quot; aria-live=&quot;polite&quot;&gt;同一 Agent 能被不同系统调用，领域逻辑不依赖某个页面或设备。&lt;/div&gt;
+&lt;/div&gt;
+&lt;style&gt;
+#hks-agent-harness { display:grid; gap:calc(var(--font-size-base) * 1); color:var(--foreground); }
+#hks-agent-harness .ah-heading { padding-inline-end:calc(var(--font-size-base) * 5.5); }
+#hks-agent-harness .ah-clients { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:calc(var(--font-size-base) * .5); }
+#hks-agent-harness .ah-resources { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:calc(var(--font-size-base) * .5); }
+#hks-agent-harness .ah-row { display:flex; align-items:center; justify-content:center; gap:calc(var(--font-size-base) * .75); flex-wrap:wrap; }
+#hks-agent-harness .ah-arrow { text-align:center; color:var(--muted-foreground); margin:calc(var(--font-size-base) * .6) 0; }
+#hks-agent-harness .ah-detail { color:var(--muted-foreground); min-height:calc(var(--font-size-base) * 2.5); }
+#hks-agent-harness .ah-cycle { margin-block:calc(var(--font-size-base) * 1); }
+#hks-agent-harness .ah-contract-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:calc(var(--font-size-base) * 1); }
+#hks-agent-harness pre { margin:calc(var(--font-size-base) * .5) 0 0; color:var(--foreground); white-space:pre-wrap; overflow-wrap:anywhere; }
+@media (max-width:600px) {
+  #hks-agent-harness .ah-clients { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #hks-agent-harness .ah-resources, #hks-agent-harness .ah-contract-grid { grid-template-columns:minmax(0,1fr); }
+}
+&lt;/style&gt;
+&lt;script type=&quot;application/json&quot; id=&quot;ah-contract-data&quot;&gt;{&quot;examples&quot;: {&quot;chat&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;current_http_projection&quot;, &quot;source&quot;: &quot;docs/architecture/examples/current/current-http-sources.json&quot;, &quot;operation_source&quot;: &quot;chat&quot;, &quot;description&quot;: &quot;业务值来自已有HTTP响应；信封、reading_id、事实编号等是标注的目标契约元数据。请求是独立协议样例，不宣称是原始抓包。&quot;}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;chat&quot;, &quot;request_id&quot;: &quot;example-chat&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;contract-example&quot;, &quot;version&quot;: &quot;1.0&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;contract_sample&quot;}, &quot;input&quot;: {&quot;diagnosis_id&quot;: &quot;54cebef17a2d4c85804b495ec8482728&quot;, &quot;question&quot;: &quot;这一步可以怎样理解？&quot;, &quot;level&quot;: 3}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;chat&quot;, &quot;request_id&quot;: &quot;example-chat&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;ai_review&quot;, &quot;label&quot;: &quot;自然语言辅导仍待核对，等式核验有范围&quot;}, &quot;effects&quot;: [], &quot;output&quot;: {&quot;reply&quot;: &quot;先看 $-1^{2024}$：没有括号时，先算乘方，所以它等于 $-(1^{2024})=-1$；若写成 $(-1)^{2024}$，才是 $1$。你看这两种写法的结果一样吗？&quot;, &quot;equations&quot;: [{&quot;left&quot;: &quot;-1^{2024}&quot;, &quot;right&quot;: &quot;-1&quot;, &quot;latex&quot;: true}, {&quot;left&quot;: &quot;(-1)^{2024}&quot;, &quot;right&quot;: &quot;1&quot;, &quot;latex&quot;: true}], &quot;fallback&quot;: false, &quot;source&quot;: &quot;model&quot;}, &quot;meta&quot;: {&quot;model&quot;: &quot;gpt-6.1-sol&quot;, &quot;seconds&quot;: 5.29, &quot;usage&quot;: {&quot;prompt_tokens&quot;: 4794, &quot;completion_tokens&quot;: 108, &quot;total_tokens&quot;: 4902}}}}, &quot;feedback.add&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;current_http_projection&quot;, &quot;source&quot;: &quot;docs/architecture/examples/current/current-http-sources.json&quot;, &quot;operation_source&quot;: &quot;feedback.add&quot;, &quot;description&quot;: &quot;业务值来自已有HTTP响应；信封、reading_id、事实编号等是标注的目标契约元数据。请求是独立协议样例，不宣称是原始抓包。&quot;}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;feedback.add&quot;, &quot;request_id&quot;: &quot;example-feedback-add&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;contract-example&quot;, &quot;version&quot;: &quot;1.0&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;contract_sample&quot;}, &quot;input&quot;: {&quot;diagnosis_id&quot;: &quot;54cebef17a2d4c85804b495ec8482728&quot;, &quot;rating&quot;: &quot;understood&quot;}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;feedback.add&quot;, &quot;request_id&quot;: &quot;example-feedback-add&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;程序核对的示例结果&quot;}, &quot;effects&quot;: [{&quot;kind&quot;: &quot;record_feedback&quot;, &quot;id&quot;: &quot;contract-feedback-metadata&quot;, &quot;idempotent_replay&quot;: false}], &quot;output&quot;: {&quot;recorded&quot;: true, &quot;message&quot;: &quot;已记录理解反馈。系统会据此调整讲解方式；数学结论仍需独立核对。&quot;}}}, &quot;practice.check&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;current_http_projection&quot;, &quot;source&quot;: &quot;docs/architecture/examples/current/current-http-sources.json&quot;, &quot;operation_source&quot;: &quot;practice.check&quot;, &quot;description&quot;: &quot;业务值来自已有HTTP响应；信封、reading_id、事实编号等是标注的目标契约元数据。请求是独立协议样例，不宣称是原始抓包。&quot;, &quot;notes&quot;: [&quot;请求中的答案由已归档题目独立计算，用于协议样例；不声称是原始抓包作答。&quot;]}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;practice.check&quot;, &quot;request_id&quot;: &quot;example-practice-check&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;contract-example&quot;, &quot;version&quot;: &quot;1.0&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;contract_sample&quot;}, &quot;input&quot;: {&quot;exercise_id&quot;: &quot;69e676b411634d58bbb687ae95345a4b&quot;, &quot;answer&quot;: &quot;10&quot;}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;practice.check&quot;, &quot;request_id&quot;: &quot;example-practice-check&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;程序核对的示例结果&quot;}, &quot;effects&quot;: [{&quot;kind&quot;: &quot;update_profile&quot;, &quot;id&quot;: &quot;contract_sample&quot;, &quot;idempotent_replay&quot;: false}], &quot;output&quot;: {&quot;correct&quot;: true, &quot;message&quot;: &quot;已验算正确，进度已保存。&quot;, &quot;duplicate&quot;: false}}}, &quot;practice.create&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;current_http_projection&quot;, &quot;source&quot;: &quot;docs/architecture/examples/current/current-http-sources.json&quot;, &quot;operation_source&quot;: &quot;practice.create&quot;, &quot;description&quot;: &quot;业务值来自已有HTTP响应；信封、reading_id、事实编号等是标注的目标契约元数据。请求是独立协议样例，不宣称是原始抓包。&quot;}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;practice.create&quot;, &quot;request_id&quot;: &quot;example-practice-create&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;contract-example&quot;, &quot;version&quot;: &quot;1.0&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;contract_sample&quot;}, &quot;input&quot;: {&quot;diagnosis_id&quot;: &quot;54cebef17a2d4c85804b495ec8482728&quot;}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;practice.create&quot;, &quot;request_id&quot;: &quot;example-practice-create&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;程序核对的示例结果&quot;}, &quot;effects&quot;: [{&quot;kind&quot;: &quot;create_practice&quot;, &quot;id&quot;: &quot;69e676b411634d58bbb687ae95345a4b&quot;, &quot;idempotent_replay&quot;: false}], &quot;output&quot;: {&quot;kp&quot;: &quot;N1&quot;, &quot;items&quot;: [{&quot;id&quot;: &quot;69e676b411634d58bbb687ae95345a4b&quot;, &quot;q&quot;: &quot;计算 \\(5\\times 3-5\\)。&quot;, &quot;question&quot;: &quot;计算 \\(5\\times 3-5\\)。&quot;, &quot;domain&quot;: [], &quot;correct&quot;: false, &quot;question_md&quot;: &quot;计算 \\(5\\times 3-5\\)。&quot;, &quot;grading&quot;: &quot;number&quot;}, {&quot;id&quot;: &quot;56e32e85fbab4e48a7abb55a818a3815&quot;, &quot;q&quot;: &quot;计算 \\(7\\times 4-5\\)。&quot;, &quot;question&quot;: &quot;计算 \\(7\\times 4-5\\)。&quot;, &quot;domain&quot;: [], &quot;correct&quot;: false, &quot;question_md&quot;: &quot;计算 \\(7\\times 4-5\\)。&quot;, &quot;grading&quot;: &quot;number&quot;}, {&quot;id&quot;: &quot;6c1059cdf3e545f2abf6902716dddc16&quot;, &quot;q&quot;: &quot;计算 \\(3\\times 6-3\\)。&quot;, &quot;question&quot;: &quot;计算 \\(3\\times 6-3\\)。&quot;, &quot;domain&quot;: [], &quot;correct&quot;: false, &quot;question_md&quot;: &quot;计算 \\(3\\times 6-3\\)。&quot;, &quot;grading&quot;: &quot;number&quot;}]}}}, &quot;profile.get&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;current_http_projection&quot;, &quot;source&quot;: &quot;docs/architecture/examples/current/current-http-sources.json&quot;, &quot;operation_source&quot;: &quot;profile.get&quot;, &quot;description&quot;: &quot;业务值来自已有HTTP响应；信封、reading_id、事实编号等是标注的目标契约元数据。请求是独立协议样例，不宣称是原始抓包。&quot;, &quot;notes&quot;: [&quot;三层是目标字段投影：facts仅复述原计数，inferences/mastery为空；不凭现有点亮推导stable。&quot;]}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;profile.get&quot;, &quot;request_id&quot;: &quot;example-profile-get&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;contract-example&quot;, &quot;version&quot;: &quot;1.0&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;contract_sample&quot;}, &quot;input&quot;: {}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;profile.get&quot;, &quot;request_id&quot;: &quot;example-profile-get&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;程序核对的示例结果&quot;}, &quot;effects&quot;: [], &quot;output&quot;: {&quot;facts&quot;: [{&quot;id&quot;: &quot;legacy-practice-total&quot;, &quot;kind&quot;: &quot;practice_total&quot;, &quot;value&quot;: 3, &quot;source_ref&quot;: &quot;docs/evidence/junior/live-browser-results.json/responses/15/body/practice_correct&quot;}, {&quot;id&quot;: &quot;legacy-cause-counts&quot;, &quot;kind&quot;: &quot;cause_counts&quot;, &quot;value&quot;: {}, &quot;source_ref&quot;: &quot;docs/evidence/junior/live-browser-results.json/responses/15/body/causes&quot;}, {&quot;id&quot;: &quot;legacy-feedback-total&quot;, &quot;kind&quot;: &quot;feedback_total&quot;, &quot;value&quot;: 1, &quot;source_ref&quot;: &quot;docs/evidence/junior/live-browser-results.json/responses/15/body/feedback_count&quot;}], &quot;inferences&quot;: [], &quot;preferences&quot;: {&quot;availability&quot;: {&quot;days&quot;: [1, 2, 3, 4, 5, 6, 7], &quot;time&quot;: &quot;19:30&quot;}}, &quot;mastery&quot;: [], &quot;legacy&quot;: {&quot;history&quot;: 1, &quot;causes&quot;: {}, &quot;tree&quot;: [{&quot;id&quot;: &quot;F1&quot;, &quot;name&quot;: &quot;提公因式&quot;, &quot;chapter&quot;: &quot;F&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: null}, {&quot;id&quot;: &quot;F2&quot;, &quot;name&quot;: &quot;平方差公式&quot;, &quot;chapter&quot;: &quot;F&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;F1&quot;}, {&quot;id&quot;: &quot;F3&quot;, &quot;name&quot;: &quot;完全平方公式&quot;, &quot;chapter&quot;: &quot;F&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;F1&quot;}, {&quot;id&quot;: &quot;F4&quot;, &quot;name&quot;: &quot;分解要彻底&quot;, &quot;chapter&quot;: &quot;F&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;F2&quot;}, {&quot;id&quot;: &quot;F5&quot;, &quot;name&quot;: &quot;括号前的符号&quot;, &quot;chapter&quot;: &quot;F&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;F1&quot;}, {&quot;id&quot;: &quot;R1&quot;, &quot;name&quot;: &quot;约分只能约因式&quot;, &quot;chapter&quot;: &quot;R&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;F4&quot;}, {&quot;id&quot;: &quot;R2&quot;, &quot;name&quot;: &quot;约分要约到最简&quot;, &quot;chapter&quot;: &quot;R&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;R1&quot;}, {&quot;id&quot;: &quot;R3&quot;, &quot;name&quot;: &quot;分式里的符号&quot;, &quot;chapter&quot;: &quot;R&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;R1&quot;}, {&quot;id&quot;: &quot;N1&quot;, &quot;name&quot;: &quot;实数与数的运算&quot;, &quot;chapter&quot;: &quot;N&quot;, &quot;lit&quot;: true, &quot;wrong&quot;: 0, &quot;correct&quot;: 3, &quot;pre&quot;: null}, {&quot;id&quot;: &quot;N2&quot;, &quot;name&quot;: &quot;二次根式&quot;, &quot;chapter&quot;: &quot;N&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;N1&quot;}, {&quot;id&quot;: &quot;N3&quot;, &quot;name&quot;: &quot;整式与幂的运算&quot;, &quot;chapter&quot;: &quot;N&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;N1&quot;}, {&quot;id&quot;: &quot;N4&quot;, &quot;name&quot;: &quot;科学计数法&quot;, &quot;chapter&quot;: &quot;N&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;N1&quot;}, {&quot;id&quot;: &quot;E1&quot;, &quot;name&quot;: &quot;一元一次方程&quot;, &quot;chapter&quot;: &quot;E&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;N3&quot;}, {&quot;id&quot;: &quot;E2&quot;, &quot;name&quot;: &quot;二元一次方程组&quot;, &quot;chapter&quot;: &quot;E&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;E1&quot;}, {&quot;id&quot;: &quot;E3&quot;, &quot;name&quot;: &quot;一元二次方程&quot;, &quot;chapter&quot;: &quot;E&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;F2&quot;}, {&quot;id&quot;: &quot;E4&quot;, &quot;name&quot;: &quot;分式方程&quot;, &quot;chapter&quot;: &quot;E&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;R1&quot;}, {&quot;id&quot;: &quot;I1&quot;, &quot;name&quot;: &quot;一元一次不等式&quot;, &quot;chapter&quot;: &quot;I&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;E1&quot;}, {&quot;id&quot;: &quot;I2&quot;, &quot;name&quot;: &quot;不等式组&quot;, &quot;chapter&quot;: &quot;I&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;I1&quot;}, {&quot;id&quot;: &quot;U1&quot;, &quot;name&quot;: &quot;平面直角坐标系&quot;, &quot;chapter&quot;: &quot;U&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: null}, {&quot;id&quot;: &quot;U2&quot;, &quot;name&quot;: &quot;一次函数&quot;, &quot;chapter&quot;: &quot;U&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;U1&quot;}, {&quot;id&quot;: &quot;U3&quot;, &quot;name&quot;: &quot;反比例函数&quot;, &quot;chapter&quot;: &quot;U&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;U1&quot;}, {&quot;id&quot;: &quot;U4&quot;, &quot;name&quot;: &quot;二次函数&quot;, &quot;chapter&quot;: &quot;U&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;E3&quot;}, {&quot;id&quot;: &quot;U5&quot;, &quot;name&quot;: &quot;函数与实际问题&quot;, &quot;chapter&quot;: &quot;U&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;U2&quot;}, {&quot;id&quot;: &quot;G1&quot;, &quot;name&quot;: &quot;相交线与平行线&quot;, &quot;chapter&quot;: &quot;G&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: null}, {&quot;id&quot;: &quot;G2&quot;, &quot;name&quot;: &quot;三角形与全等&quot;, &quot;chapter&quot;: &quot;G&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;G1&quot;}, {&quot;id&quot;: &quot;G3&quot;, &quot;name&quot;: &quot;勾股定理&quot;, &quot;chapter&quot;: &quot;G&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;G2&quot;}, {&quot;id&quot;: &quot;G4&quot;, &quot;name&quot;: &quot;四边形&quot;, &quot;chapter&quot;: &quot;G&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;G2&quot;}, {&quot;id&quot;: &quot;G5&quot;, &quot;name&quot;: &quot;相似三角形&quot;, &quot;chapter&quot;: &quot;G&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;G2&quot;}, {&quot;id&quot;: &quot;G6&quot;, &quot;name&quot;: &quot;圆&quot;, &quot;chapter&quot;: &quot;G&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;G2&quot;}, {&quot;id&quot;: &quot;G7&quot;, &quot;name&quot;: &quot;图形变换与视图&quot;, &quot;chapter&quot;: &quot;G&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;U1&quot;}, {&quot;id&quot;: &quot;G8&quot;, &quot;name&quot;: &quot;锐角三角函数&quot;, &quot;chapter&quot;: &quot;G&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;G3&quot;}, {&quot;id&quot;: &quot;G9&quot;, &quot;name&quot;: &quot;几何推理与证明&quot;, &quot;chapter&quot;: &quot;G&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;G2&quot;}, {&quot;id&quot;: &quot;S1&quot;, &quot;name&quot;: &quot;统计图表与数据收集&quot;, &quot;chapter&quot;: &quot;S&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: null}, {&quot;id&quot;: &quot;S2&quot;, &quot;name&quot;: &quot;平均数中位数众数&quot;, &quot;chapter&quot;: &quot;S&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;S1&quot;}, {&quot;id&quot;: &quot;S3&quot;, &quot;name&quot;: &quot;方差与数据波动&quot;, &quot;chapter&quot;: &quot;S&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;S2&quot;}, {&quot;id&quot;: &quot;P1&quot;, &quot;name&quot;: &quot;事件与概率&quot;, &quot;chapter&quot;: &quot;P&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: null}, {&quot;id&quot;: &quot;P2&quot;, &quot;name&quot;: &quot;列表与树状图概率&quot;, &quot;chapter&quot;: &quot;P&quot;, &quot;lit&quot;: false, &quot;wrong&quot;: 0, &quot;correct&quot;: 0, &quot;pre&quot;: &quot;P1&quot;}], &quot;reviews&quot;: [{&quot;id&quot;: &quot;N1&quot;, &quot;kp&quot;: &quot;N1&quot;, &quot;cause&quot;: null, &quot;title&quot;: &quot;实数与数的运算&quot;, &quot;stage&quot;: 0, &quot;due&quot;: &quot;2026-11-15T19:30+08:00&quot;, &quot;completed&quot;: 1, &quot;last_group&quot;: &quot;644d7b0ee3e64b678d1bbd2251324576&quot;}], &quot;availability&quot;: {&quot;days&quot;: [1, 2, 3, 4, 5, 6, 7], &quot;time&quot;: &quot;19:30&quot;}, &quot;practice_correct&quot;: 3, &quot;recent&quot;: [{&quot;id&quot;: &quot;ca7eff1a614f4d16b236119050a40659&quot;, &quot;at&quot;: &quot;2026-11-14T16:13:05+08:00&quot;, &quot;type&quot;: &quot;practice&quot;, &quot;problem&quot;: &quot;计算 \\(3\\times 6-3\\)。&quot;, &quot;status&quot;: &quot;correct&quot;, &quot;cause&quot;: null}, {&quot;id&quot;: &quot;030f42e92b9f4ce0ac216768b457bcbc&quot;, &quot;at&quot;: &quot;2026-11-14T16:13:05+08:00&quot;, &quot;type&quot;: &quot;practice&quot;, &quot;problem&quot;: &quot;计算 \\(7\\times 4-5\\)。&quot;, &quot;status&quot;: &quot;correct&quot;, &quot;cause&quot;: null}, {&quot;id&quot;: &quot;51c524d1e18242f0b34dad1f629957e9&quot;, &quot;at&quot;: &quot;2026-11-14T16:13:05+08:00&quot;, &quot;type&quot;: &quot;practice&quot;, &quot;problem&quot;: &quot;计算 \\(5\\times 3-5\\)。&quot;, &quot;status&quot;: &quot;correct&quot;, &quot;cause&quot;: null}, {&quot;id&quot;: &quot;54cebef17a2d4c85804b495ec8482728&quot;, &quot;at&quot;: &quot;2026-11-14T16:12:58+08:00&quot;, &quot;type&quot;: &quot;diagnosis&quot;, &quot;problem&quot;: &quot;17.（本题满分12分）\n（1）计算：$-1^{2024}+|2-\\sqrt{3}|-\\sqrt[3]{-27}+2\\cos30^\\circ$。&quot;, &quot;status&quot;: &quot;correct&quot;, &quot;cause&quot;: null}], &quot;pending&quot;: [], &quot;chapters&quot;: {&quot;N&quot;: &quot;数与式&quot;, &quot;F&quot;: &quot;整式乘法与因式分解&quot;, &quot;R&quot;: &quot;分式&quot;, &quot;E&quot;: &quot;方程与方程组&quot;, &quot;I&quot;: &quot;不等式与不等式组&quot;, &quot;U&quot;: &quot;函数&quot;, &quot;G&quot;: &quot;图形与几何&quot;, &quot;S&quot;: &quot;统计&quot;, &quot;P&quot;: &quot;概率&quot;}, &quot;feedback_count&quot;: 1, &quot;timezone&quot;: &quot;Asia/Shanghai&quot;}}}}, &quot;recognize&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;runtime_http&quot;, &quot;source&quot;: &quot;docs/architecture/examples/runtime/capture-f157d63a66b1.json&quot;, &quot;source_sha256&quot;: &quot;f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c&quot;, &quot;trace_index&quot;: 3, &quot;capture_script&quot;: &quot;tools/e2e_loop_check.py&quot;, &quot;scope&quot;: &quot;真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量&quot;, &quot;request_image_restored_from&quot;: &quot;docs/evidence/phase-b/synthetic-question.png&quot;}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;recognize&quot;, &quot;request_id&quot;: &quot;loop-recognize-1&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;isolated-e2e&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;e2e_loop_local&quot;}, &quot;input&quot;: {&quot;image_data&quot;: &quot;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAoAAAAFoCAIAAABIUN0GAAAsm0lEQVR4nO3dd3hUVeL/8ZMpKYQ0CCGBAKFEehEiEOlSRMoiHSRIX5EidcECUkXF3UeiCKtSl7K0QBAhtEiIFEVAV2pWWhIUCBBCCGESmJnfs5znmd98ZybDQMoh+H79Rc499557J5d85px777luZrNZAACAoqUp4vYAAAABDACAGvSAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAOAZDWA3F8ycObMI9uTPJikpaezYsbVr1y5ZsqSnp2elSpUGDBjw448/FnhDiYmJAwYMCAsL8/T09Pf3r1+//tSpU69cuVLgDQHAM8PNbDYXehtubkKIgICAihUr5lVn5ENFsyeDBg1asWKFeNYtXrx4/Pjxubm5er2+SpUqBoMhOTn5f9+5NJr58+dPmjSpQFrJycl58803ly9fLoTQ6/WVK1c2GAwpKSlCiJIlS27cuLFjx44F0hAAPGvMhU82NGjQoCJoq7jsyRNLS0vz9PQUQmzbts1Jta1bt8pvG2+99VZGRoYsPH36dN26deWHsHv37gLZn9dee01+s3nnnXdu374tC8+cOdOsWTMhhIeHx9mzZwukIQB4xnANuJj54osvDAZDUFDQP/7xj7zqmM3mSZMmmc3mHj16REdH+/n5yfKaNWuuW7dOr9cLIT755JP878yOHTvWrl0rhJgzZ868efN8fX1leY0aNXbv3l2zZs2cnJwpU6bkvyEAeAYVQcg/br/TYDAsWLAgMjLS19dXp9OVKVPm5Zdf3rhxY171U1JSJk6cWKtWLW9vby8vrxo1arz11lvnz5+33wfnx37hwoVJkyY1aNAgICDA3d09JCSkQ4cOixYtysnJyeuI0tPTX3/99dKlS1u2tnnz5pCHtmzZktcODxo0SA4FHz582GbRjRs3ypQpI4Ro3bq10Wi0WXrv3r0yZcq0bdt2/vz5Qohjx4453L7lKu/Bgwftl0ZGRgoh/Pz8zPnWrVs3IURgYKD9R2Q2m9etWyeE0Ol0165dy39bAPCMeeoCOC0trX79+nKVwMDAatWqubu7yx8nTpxoX3/FihVySFar1YaHhwcHB8vKJUqUWLdunaVa/YfkooCAAPmj9XYWLlxoaahcuXI1atQoWbKk/LFq1ao246iWI+rTp4/MmGrVqslFISEhcmlISEhex3j79u1KlSoJIWrXrp2bm2u9KCoqSu5hamqq/YpffvmlECImJubmzZuenp4DBgxwuP1FixbJK7L379+3X9q7d285OGzOt7Jlywohunbt6nBpWlqa/CicfBcBgD+tpy6AX331VSGEj4/Pnj17ZMmNGzcsN/L85z//sa68atUqWf7aa69duXJFFp46dapJkyYyF226mHntybJly+Si1q1bnzhxQhbm5uauWbMmICBACFG2bFnL9i3bKVu2rEajmTZtmuUiq4sBbDab9+3bJ6/Rzpo1y1K4a9cuue6GDRvsVzGZTDVq1AgNDZWxOnjwYL1e7zCnU1NTDx8+nFf/uF69ejL7zfkmR7Pz+h6Qm5srD2fOnDn5bwsAnjFPVwCnpKTIWProo4+sy0+ePCk38vHHH1sKr1275u3tLYTo1auXzXbS0tJkV7hly5aP3JO0tDS5ncjISIPBYLOpH3/8UafTCSH69u1rsx2b/bEZgt68ebPzg504caIQwt3d/fTp02azOSsrKywszMkHtW3bNiHE7Nmz5Y8//fSTEGLKlCnmx/H999/LPbcO/idWqlQpIcRLL73kcGlqaqpsa9y4cflvCwCeMU9XACcmJjZ66Ndff3XYlxo/frylUD46rNFoLl68aL+pd955R66SlpbmfE/mzJkjy48cOeJwr9544w3ZUHJysvV2SpUq5fDap4sMBkPt2rWFEM2aNTOZTOPHjxdCVKlSJTMz02H91q1b6/V6645448aN/f3979y542KLmZmZNWvWFEKEhoZa7ljOj7Zt28rRfodb++qrr+QHNWzYsPy3BQDPmKILYCdmzJjh4kas/5TLm4nq1avnsH5mZuaJh7Kzs50HsHxgpnLlynk1vW/fPrni119/bb2djh07mvPn+PHjchR3xIgR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xVhiYqLMs/feey8oKCivapUrV+7QoYMQwjLeoNDjnjxFpmfPnvIjysjIsF8aFxd39+7doKCg5s2bO99OQkJCampqyZIlX331VSFE37595dXlBw8e2NQ8ePBgQkKC/PU5uVLr6ekpB3t+//33c+fOPenxAXgmAljeKnXkyJEtW7bYLx0yZMj48eN79eplXThnzpygoCCz2Tx69GiTySSEuHXrlszUoUOHvvDCC06ak53g2NjY48ePF8LRFGMxMTHyWqNlND4v06ZN++STTx55m3cReIKTp2h06dLF09MzNzd369at9kvlBeBevXppNI/4/yVvpe7Zs6e8MC9XSUtL27t3r8NtajSaR/5ePvjggysPVapU6fGPDMAzFMBTpkyR/+jdu/fQoUMTExPv37/vfBU/P78PP/xQCHH8+PEvv/xSCPH++++np6cHBATIcidatGjRrl07uUrBHcSzIDExUQhRp06dgIAA5zUjIyMnT548ZswYodoTnDxFo2TJkp07d7bkojWDwfDtt98KIeRlYCeys7M3b94sx59lSUhISIsWLRyOQu/fv1/++kqVKuV8s56ensEPyfvUAPx5A7hnz55fffVViRIljEbj8uXLW7VqFRAQ0KlTp0WLFt28eTOvtYYMGdKkSRPZG0tMTPznP/8phJg7d25gYOAjW5Sd4O3btx85cqSgj6YYkwO5YWFhovh4spOnaMjhYvtR6Li4uKysLEuUOrFly5Y7d+6UL1++TZs2NpuNjY29d++e/a+vcuXKBX0cAJ7piThGjBhx/vz5adOmVatWTQhx9+7duLi40aNHV6xY8d13383NzbVfxc3NbeHChRqNJj09vUOHDg8ePGjQoMEbb7zhSnNNmzbt1KlTYXeCV65c+cTzPDhfvZAmQ5A5Ie+CVuuxjv0JTp6i0aVLFx8fH/tRaNkn7t279yPHn+XjvwMGDLCu2bNnT61We+fOHdmNduXXl5qa2sCRp+TEA6ByIg756OSch1JSUuLj47du3bp9+/bs7OwPP/zwwIEDu3fv9vT0tFklIiJi6NChS5YsycnJkXnscGoOh2bPnr1jx45du3YdOnRI3lla4B45t4OcAuIJVi+kyRBKliyZkZGRlZUlVHvcY3+Ck6cIeHl5devWbfXq1Rs2bLBcVs/JyZHBKTuyTly5ckVe6F28ePHSpUutF8lHhtauXdu7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AAoQwAAAKEAAAwCgAAEMAIACBDAAAAoQwAAAKEAAAwCgAAEMAIACBDAAAAoQwAAAKEAAAwCgAAEMAIACBDAAAAoQwAAAKEAAAwCgAAEMAIACBDAAAAoQwAAAKEAAAwCgAAEMAIACBDAAAAoQwAAAKEAAAwCgAAEMAIACBDAAAAoQwAAAKEAAAwCgAAEMAIACBDAAAAoQwAAAKEAAAwCgAAEMAIACBDAAAAoQwAAAKEAAAwCgAAEMAIACBDAAAAoQwAAAKEAAAwCgAAEMAIACBDAAAAoQwAAAKEAAAwCgAAEMAIACBDAAAAoQwAAAKEAAAwCgAAEMAIACBDAAAAoQwAAAKEAAAwCgAAEMAIACBDAAAAoQwAAAKEAAAwBAAAMA8OdADxgAAAUIYAAAFCCAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAEABAhgAAAUIYAAAFCCAAQBQgAAGAIAABgDgz4EeMAAAChDAAAAoQAADAKAAAQwAgAIEMAAAChDAAAAoQAADAKAAAQwAgAIEMAAAChDAAAAoQAADAKAAAQwAgAIEMAAAChDAAAAoQAADAKAAAQwAgAIEMAAAChDAAAAoQAADAKAAAQwAgAIEMAAAChDAAAAoQAADAKAAAQwAgAIEMAAAChDAAAAoQAADAKAAAQwAgAIEMAAAChDAAAAoQAADAKAAAQwAgAIEMAAAChDAAAAoQAADAKAAAQwAgAIEMAAAChDAAAAoQAADAKAAAQwAgAIEMAAAChDAAAAoQAADAKAAAQwAgAIEMAAAChDAAAAoQAADAKAAAQwAgAIEMAAAChDAAAAoQAADAKAAAQwAgCh6/w/3zYRsmjEZ7AAAAABJRU5ErkJggg==&quot;}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;request_id&quot;: &quot;loop-recognize-1&quot;, &quot;operation&quot;: &quot;recognize&quot;, &quot;status&quot;: &quot;needs_confirmation&quot;, &quot;output&quot;: {&quot;reading_id&quot;: &quot;5f57e57fdb8043b680c64db1d191bd9e&quot;, &quot;problem&quot;: &quot;\\(x^2-9\\)&quot;, &quot;problem_latex&quot;: &quot;x^2-9&quot;, &quot;steps&quot;: [&quot;\\((x-3)^2\\)&quot;], &quot;question_type&quot;: &quot;factor&quot;, &quot;topic_id&quot;: &quot;F2&quot;, &quot;diagram_description&quot;: &quot;&quot;, &quot;uncertain_lines&quot;: [], &quot;warnings&quot;: [], &quot;supported&quot;: true, &quot;inferred&quot;: false, &quot;reading_evidence&quot;: &quot;&quot;, &quot;alternatives&quot;: [], &quot;multiple_questions&quot;: false, &quot;needs_confirmation&quot;: true}, &quot;verification&quot;: {&quot;level&quot;: &quot;unavailable&quot;, &quot;label&quot;: &quot;识别转录需要你对照原图确认&quot;}, &quot;effects&quot;: [], &quot;next_actions&quot;: [{&quot;operation&quot;: &quot;study&quot;, &quot;label&quot;: &quot;核对后整理这道题&quot;, &quot;requires&quot;: [&quot;confirmed_reading_id&quot;]}], &quot;meta&quot;: {&quot;model&quot;: &quot;gpt-6.1-sol&quot;, &quot;seconds&quot;: 0.0, &quot;usage&quot;: {&quot;prompt_tokens&quot;: 1, &quot;completion_tokens&quot;: 1, &quot;total_tokens&quot;: 2}}}}, &quot;schedule.set&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;current_http_projection&quot;, &quot;source&quot;: &quot;docs/architecture/examples/current/current-http-sources.json&quot;, &quot;operation_source&quot;: &quot;schedule.set&quot;, &quot;description&quot;: &quot;现场生成，脚本 tools/capture_agent_examples.py；未留存原始 HTTP 响应字节，已解析的 JSON 在 current-http-sources.json 的 response 字段保留。 目标信封与请求是独立协议样例，不是原始抓包。&quot;}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;schedule.set&quot;, &quot;request_id&quot;: &quot;example-schedule-set&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;contract-example&quot;, &quot;version&quot;: &quot;1.0&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;contract_sample&quot;}, &quot;input&quot;: {&quot;availability&quot;: {&quot;days&quot;: [2, 5], &quot;time&quot;: &quot;18:15&quot;}}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;schedule.set&quot;, &quot;request_id&quot;: &quot;example-schedule-set&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;程序核对的示例结果&quot;}, &quot;effects&quot;: [{&quot;kind&quot;: &quot;update_profile&quot;, &quot;id&quot;: &quot;contract_sample&quot;, &quot;idempotent_replay&quot;: false}], &quot;output&quot;: {&quot;availability&quot;: {&quot;days&quot;: [2, 5], &quot;time&quot;: &quot;18:15&quot;}}}}, &quot;speech&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;current_http_projection&quot;, &quot;source&quot;: &quot;docs/architecture/examples/current/current-http-sources.json&quot;, &quot;operation_source&quot;: &quot;speech&quot;, &quot;description&quot;: &quot;现场生成，脚本 tools/capture_agent_examples.py；未留存原始 HTTP 响应字节，已解析的 JSON 在 current-http-sources.json 的 response 字段保留。 目标信封与请求是独立协议样例，不是原始抓包。&quot;, &quot;notes&quot;: [&quot;当前真实503错误SPEECH_NOT_CONFIGURED映射为目标MODEL_NOT_CONFIGURED；不生成虚构音频。&quot;]}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;speech&quot;, &quot;request_id&quot;: &quot;example-speech&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;contract-example&quot;, &quot;version&quot;: &quot;1.0&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;contract_sample&quot;}, &quot;input&quot;: {&quot;mode&quot;: &quot;tts&quot;, &quot;text&quot;: &quot;先想想每一项共同有什么。&quot;}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;speech&quot;, &quot;request_id&quot;: &quot;example-speech&quot;, &quot;status&quot;: &quot;error&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;unavailable&quot;, &quot;label&quot;: &quot;语音适配未配置&quot;}, &quot;effects&quot;: [], &quot;error&quot;: {&quot;code&quot;: &quot;MODEL_NOT_CONFIGURED&quot;, &quot;message&quot;: &quot;语音识别与合成尚未配置，可以先用文字向 AI 老师提问。&quot;, &quot;retryable&quot;: false}}}, &quot;study&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;runtime_http&quot;, &quot;source&quot;: &quot;docs/architecture/examples/runtime/capture-f157d63a66b1.json&quot;, &quot;source_sha256&quot;: &quot;f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c&quot;, &quot;trace_index&quot;: 5, &quot;capture_script&quot;: &quot;tools/e2e_loop_check.py&quot;, &quot;scope&quot;: &quot;真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量&quot;, &quot;request_image_restored_from&quot;: null}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;study&quot;, &quot;request_id&quot;: &quot;loop-confirmed-study&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;isolated-e2e&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;e2e_loop_local&quot;}, &quot;input&quot;: {&quot;confirmed_reading_id&quot;: &quot;5f57e57fdb8043b680c64db1d191bd9e&quot;, &quot;problem&quot;: &quot;\\(x^2-9\\)&quot;, &quot;problem_latex&quot;: &quot;x^2-9&quot;, &quot;steps&quot;: [&quot;\\((x-3)^2\\)&quot;]}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;request_id&quot;: &quot;loop-confirmed-study&quot;, &quot;operation&quot;: &quot;study&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;恒等变形与完成度已程序核验&quot;}, &quot;output&quot;: {&quot;analysis&quot;: {&quot;kind&quot;: &quot;factor&quot;, &quot;problem&quot;: &quot;x² - 9&quot;, &quot;problem_latex&quot;: &quot;x^2-9&quot;, &quot;target&quot;: &quot;(x-3)(x+3)&quot;, &quot;steps&quot;: [{&quot;i&quot;: 1, &quot;text&quot;: &quot;(x - 3)^2&quot;, &quot;ok&quot;: false, &quot;latex&quot;: &quot;\\left(x - 3\\right)^{2}&quot;}], &quot;first_error&quot;: 1, &quot;cause&quot;: &quot;F-MIX-FORMULA&quot;, &quot;status&quot;: &quot;wrong_step&quot;, &quot;prev&quot;: &quot;x² - 9&quot;, &quot;cur&quot;: &quot;(x - 3)²&quot;, &quot;evidence&quot;: {&quot;at&quot;: {&quot;x&quot;: 2}, &quot;prev&quot;: &quot;-5&quot;, &quot;cur&quot;: &quot;1&quot;, &quot;prev_val&quot;: -5.0, &quot;cur_val&quot;: 1.0}, &quot;hints&quot;: [&quot;你选的公式要再想想：中间有没有 2ab 这一项，决定了该用哪一个公式。&quot;, &quot;x² - 9 只有两项，而且是两个平方相减，这是平方差公式 a²-b²=(a+b)(a-b)；完全平方公式是三项的。&quot;], &quot;h3_leaks&quot;: [], &quot;visual_svg&quot;: &quot;\u003csvg xmlns=\&quot;http://www.w3.org/2000/svg\&quot; viewBox=\&quot;0 0 420 675\&quot; role=\&quot;img\&quot; aria-label=\&quot;平方差面积拼图：x²减9，可分步查看重组\&quot;&gt;\u003ctitle&gt;平方差面积拼图：x²减9，可分步查看重组\u003c/title&gt;\u003ctext x=\&quot;210.00\&quot; y=\&quot;27.00\&quot; font-size=\&quot;18\&quot; fill=\&quot;#243e37\&quot; text-anchor=\&quot;middle\&quot; font-weight=\&quot;600\&quot;&gt;① 去掉一块小正方形\u003c/text&gt;\u003crect x=\&quot;80.00\&quot; y=\&quot;67.00\&quot; width=\&quot;111.43\&quot; height=\&quot;83.57\&quot; fill=\&quot;#b9892f\&quot; stroke=\&quot;#fffdf7\&quot; stroke-width=\&quot;2\&quot; rx=\&quot;3\&quot;/&gt;\u003crect x=\&quot;80.00\&quot; y=\&quot;150.57\&quot; width=\&quot;195.00\&quot; height=\&quot;111.43\&quot; fill=\&quot;#387d68\&quot; stroke=\&quot;#fffdf7\&quot; stroke-width=\&quot;2\&quot; rx=\&quot;3\&quot;/&gt;\u003crect x=\&quot;191.43\&quot; y=\&quot;67\&quot; width=\&quot;83.57\&quot; height=\&quot;83.57\&quot; fill=\&quot;#f4e5db\&quot; stroke=\&quot;#c26343\&quot; stroke-dasharray=\&quot;6 4\&quot;/&gt;\u003ctext x=\&quot;233.21\&quot; y=\&quot;113.79\&quot; font-size=\&quot;17\&quot; fill=\&quot;#c26343\&quot; text-anchor=\&quot;middle\&quot; font-weight=\&quot;400\&quot;&gt;3²\u003c/text&gt;\u003ctext x=\&quot;177.50\&quot; y=\&quot;55.00\&quot; font-size=\&quot;16\&quot; fill=\&quot;#243e37\&quot; text-anchor=\&quot;middle\&quot; font-weight=\&quot;400\&quot;&gt;边长 x\u003c/text&gt;\u003ctext x=\&quot;210.00\&quot; y=\&quot;292.00\&quot; font-size=\&quot;18\&quot; fill=\&quot;#243e37\&quot; text-anchor=\&quot;middle\&quot; font-weight=\&quot;400\&quot;&gt;剩余面积：x² − 9\u003c/text&gt;\u003cg data-rearranged=\&quot;true\&quot; style=\&quot;display:none\&quot;&gt;\u003ctext x=\&quot;210.00\&quot; y=\&quot;338.00\&quot; font-size=\&quot;18\&quot; fill=\&quot;#243e37\&quot; text-anchor=\&quot;middle\&quot; font-weight=\&quot;600\&quot;&gt;② 旋转橙色块，拼成长方形\u003c/text&gt;\u003crect x=\&quot;60.00\&quot; y=\&quot;384.00\&quot; width=\&quot;195.00\&quot; height=\&quot;111.43\&quot; fill=\&quot;#387d68\&quot; stroke=\&quot;#fffdf7\&quot; stroke-width=\&quot;2\&quot; rx=\&quot;3\&quot;/&gt;\u003crect x=\&quot;255.00\&quot; y=\&quot;384.00\&quot; width=\&quot;83.57\&quot; height=\&quot;111.43\&quot; fill=\&quot;#b9892f\&quot; stroke=\&quot;#fffdf7\&quot; stroke-width=\&quot;2\&quot; rx=\&quot;3\&quot;/&gt;\u003ctext x=\&quot;199.29\&quot; y=\&quot;370.00\&quot; font-size=\&quot;16\&quot; fill=\&quot;#243e37\&quot; text-anchor=\&quot;middle\&quot; font-weight=\&quot;400\&quot;&gt;长 x + 3\u003c/text&gt;\u003ctext x=\&quot;199.29\&quot; y=\&quot;522.43\&quot; font-size=\&quot;16\&quot; fill=\&quot;#243e37\&quot; text-anchor=\&quot;middle\&quot; font-weight=\&quot;400\&quot;&gt;宽 x − 3\u003c/text&gt;\u003ctext x=\&quot;210.00\&quot; y=\&quot;558.00\&quot; font-size=\&quot;16\&quot; fill=\&quot;#65756d\&quot; text-anchor=\&quot;middle\&quot; font-weight=\&quot;400\&quot;&gt;两块没有增加，也没有减少\u003c/text&gt;\u003ctext x=\&quot;210.00\&quot; y=\&quot;592.00\&quot; font-size=\&quot;18\&quot; fill=\&quot;#243e37\&quot; text-anchor=\&quot;middle\&quot; font-weight=\&quot;400\&quot;&gt;面积：(x + 3)(x − 3)\u003c/text&gt;\u003c/g&gt;\u003cg data-before=\&quot;true\&quot;&gt;\u003ctext x=\&quot;210.00\&quot; y=\&quot;425.00\&quot; font-size=\&quot;18\&quot; fill=\&quot;#65756d\&quot; text-anchor=\&quot;middle\&quot; font-weight=\&quot;400\&quot;&gt;把剩余的两块拼在一起，\u003c/text&gt;\u003ctext x=\&quot;210.00\&quot; y=\&quot;460.00\&quot; font-size=\&quot;18\&quot; fill=\&quot;#65756d\&quot; text-anchor=\&quot;middle\&quot; font-weight=\&quot;400\&quot;&gt;会变成什么形状？\u003c/text&gt;\u003c/g&gt;\u003ctext x=\&quot;210.00\&quot; y=\&quot;630.00\&quot; font-size=\&quot;14\&quot; fill=\&quot;#65756d\&quot; text-anchor=\&quot;middle\&quot; font-weight=\&quot;400\&quot;&gt;按 x=7 绘制；面积拼图要求 x&amp;gt;3。\u003c/text&gt;\u003ctext x=\&quot;210.00\&quot; y=\&quot;654.00\&quot; font-size=\&quot;14\&quot; fill=\&quot;#65756d\&quot; text-anchor=\&quot;middle\&quot; font-weight=\&quot;400\&quot;&gt;代数恒等式对其他 x 仍然成立。\u003c/text&gt;\u003c/svg&gt;&quot;, &quot;card&quot;: {&quot;kp&quot;: &quot;F2&quot;, &quot;kp_name&quot;: &quot;平方差公式&quot;, &quot;title&quot;: &quot;平方差公式&quot;, &quot;body&quot;: &quot;a²-b² = (a+b)(a-b)。两项、中间是减号、两项都是平方。&quot;, &quot;tip&quot;: &quot;和完全平方不同：这里没有 2ab 这一项。&quot;}, &quot;domain&quot;: [], &quot;lesson_kp&quot;: &quot;F2&quot;, &quot;question_type&quot;: &quot;factor&quot;, &quot;knowledge_ids&quot;: [&quot;F2&quot;], &quot;verification&quot;: {&quot;status&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;恒等变形与完成度已程序核验&quot;}, &quot;engine&quot;: &quot;algebra&quot;, &quot;prompt_version&quot;: &quot;junior-20261114-v1&quot;, &quot;hint_levels_available&quot;: 3}, &quot;diagnosis_id&quot;: &quot;93aff02edf6240fda24c15608eef70ec&quot;, &quot;duplicate&quot;: false, &quot;wrong_card&quot;: {&quot;id&quot;: &quot;d345f56ff21840378fe7e5e9185c10da&quot;, &quot;type&quot;: &quot;wrong&quot;, &quot;problem&quot;: &quot;\\(x^2-9\\)&quot;, &quot;student_steps&quot;: [&quot;\\((x-3)^2\\)&quot;], &quot;knowledge_ids&quot;: [&quot;F2&quot;], &quot;diagnosis_id&quot;: &quot;93aff02edf6240fda24c15608eef70ec&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;恒等变形与完成度已程序核验&quot;}, &quot;learner_note&quot;: &quot;&quot;, &quot;revision&quot;: 0, &quot;study_status&quot;: &quot;wrong_step&quot;}}, &quot;effects&quot;: [{&quot;kind&quot;: &quot;record_diagnosis&quot;, &quot;id&quot;: &quot;93aff02edf6240fda24c15608eef70ec&quot;, &quot;idempotent_replay&quot;: false}, {&quot;kind&quot;: &quot;create_wrong_card&quot;, &quot;id&quot;: &quot;d345f56ff21840378fe7e5e9185c10da&quot;, &quot;idempotent_replay&quot;: false}]}}, &quot;card.edit&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;runtime_http&quot;, &quot;source&quot;: &quot;docs/architecture/examples/runtime/capture-f157d63a66b1.json&quot;, &quot;source_sha256&quot;: &quot;f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c&quot;, &quot;trace_index&quot;: 8, &quot;capture_script&quot;: &quot;tools/e2e_loop_check.py&quot;, &quot;scope&quot;: &quot;真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量&quot;, &quot;request_image_restored_from&quot;: null}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;card.edit&quot;, &quot;request_id&quot;: &quot;loop-card-edit-5&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;isolated-e2e&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;e2e_loop_local&quot;}, &quot;input&quot;: {&quot;card_id&quot;: &quot;d345f56ff21840378fe7e5e9185c10da&quot;, &quot;expected_revision&quot;: 0, &quot;learner_note&quot;: &quot;我把两个公式混淆了。&quot;}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;request_id&quot;: &quot;loop-card-edit-5&quot;, &quot;operation&quot;: &quot;card.edit&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;恒等变形与完成度已程序核验&quot;}, &quot;output&quot;: {&quot;card&quot;: {&quot;id&quot;: &quot;d345f56ff21840378fe7e5e9185c10da&quot;, &quot;type&quot;: &quot;wrong&quot;, &quot;problem&quot;: &quot;\\(x^2-9\\)&quot;, &quot;student_steps&quot;: [&quot;\\((x-3)^2\\)&quot;], &quot;knowledge_ids&quot;: [&quot;F2&quot;], &quot;diagnosis_id&quot;: &quot;93aff02edf6240fda24c15608eef70ec&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;恒等变形与完成度已程序核验&quot;}, &quot;learner_note&quot;: &quot;我把两个公式混淆了。&quot;, &quot;revision&quot;: 1, &quot;study_status&quot;: &quot;wrong_step&quot;}, &quot;revision&quot;: 1}, &quot;effects&quot;: [{&quot;kind&quot;: &quot;edit_card&quot;, &quot;id&quot;: &quot;d345f56ff21840378fe7e5e9185c10da&quot;, &quot;idempotent_replay&quot;: false}]}}, &quot;card.list&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;runtime_http&quot;, &quot;source&quot;: &quot;docs/architecture/examples/runtime/capture-f157d63a66b1.json&quot;, &quot;source_sha256&quot;: &quot;f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c&quot;, &quot;trace_index&quot;: 7, &quot;capture_script&quot;: &quot;tools/e2e_loop_check.py&quot;, &quot;scope&quot;: &quot;真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量&quot;, &quot;request_image_restored_from&quot;: null}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;card.list&quot;, &quot;request_id&quot;: &quot;loop-card-list-4&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;isolated-e2e&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;e2e_loop_local&quot;}, &quot;input&quot;: {&quot;type&quot;: &quot;wrong&quot;}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;request_id&quot;: &quot;loop-card-list-4&quot;, &quot;operation&quot;: &quot;card.list&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;output&quot;: {&quot;items&quot;: [{&quot;id&quot;: &quot;d345f56ff21840378fe7e5e9185c10da&quot;, &quot;type&quot;: &quot;wrong&quot;, &quot;problem&quot;: &quot;\\(x^2-9\\)&quot;, &quot;student_steps&quot;: [&quot;\\((x-3)^2\\)&quot;], &quot;knowledge_ids&quot;: [&quot;F2&quot;], &quot;diagnosis_id&quot;: &quot;93aff02edf6240fda24c15608eef70ec&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;恒等变形与完成度已程序核验&quot;}, &quot;learner_note&quot;: &quot;&quot;, &quot;revision&quot;: 0, &quot;study_status&quot;: &quot;wrong_step&quot;}], &quot;next_cursor&quot;: null}, &quot;effects&quot;: [], &quot;verification&quot;: {&quot;level&quot;: &quot;unavailable&quot;, &quot;label&quot;: &quot;来自本机保存的学习记录&quot;}}}, &quot;card.unlock&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;runtime_http&quot;, &quot;source&quot;: &quot;docs/architecture/examples/runtime/capture-f157d63a66b1.json&quot;, &quot;source_sha256&quot;: &quot;f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c&quot;, &quot;trace_index&quot;: 27, &quot;capture_script&quot;: &quot;tools/e2e_loop_check.py&quot;, &quot;scope&quot;: &quot;真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量&quot;, &quot;request_image_restored_from&quot;: null}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;card.unlock&quot;, &quot;request_id&quot;: &quot;loop-card-unlock-12&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;isolated-e2e&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;e2e_loop_local&quot;}, &quot;input&quot;: {&quot;quiz_id&quot;: &quot;f5a8b9485a7f47d1b4eb861dc14b447c&quot;}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;request_id&quot;: &quot;loop-card-unlock-12&quot;, &quot;operation&quot;: &quot;card.unlock&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;output&quot;: {&quot;knowledge_id&quot;: &quot;F2&quot;, &quot;unlocked&quot;: false, &quot;reused_existing&quot;: false, &quot;checks&quot;: {&quot;U1&quot;: false, &quot;U2&quot;: false, &quot;U3&quot;: true, &quot;U4&quot;: false, &quot;U5&quot;: false}, &quot;reasons&quot;: [&quot;需要在这组三题里答对至少两题。&quot;, &quot;还需要独立完成其中的迁移题。&quot;, &quot;答对的检验题里使用过完整解法，可以学习后再试一组。&quot;, &quot;先完成并保存本组三题。&quot;]}, &quot;effects&quot;: [], &quot;verification&quot;: {&quot;level&quot;: &quot;unavailable&quot;, &quot;label&quot;: &quot;依据已保存答题事实检查 U1 至 U5&quot;}}}, &quot;growth.get&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;runtime_http&quot;, &quot;source&quot;: &quot;docs/architecture/examples/runtime/capture-f157d63a66b1.json&quot;, &quot;source_sha256&quot;: &quot;f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c&quot;, &quot;trace_index&quot;: 47, &quot;capture_script&quot;: &quot;tools/e2e_loop_check.py&quot;, &quot;scope&quot;: &quot;真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量&quot;, &quot;request_image_restored_from&quot;: null}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;growth.get&quot;, &quot;request_id&quot;: &quot;loop-growth-get-32&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;isolated-e2e&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;e2e_loop_local&quot;}, &quot;input&quot;: {}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;request_id&quot;: &quot;loop-growth-get-32&quot;, &quot;operation&quot;: &quot;growth.get&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;output&quot;: {&quot;total&quot;: 10, &quot;components&quot;: {&quot;scale&quot;: 10, &quot;lushness&quot;: 0, &quot;relations&quot;: 0}, &quot;evidence&quot;: {&quot;scale&quot;: [&quot;f4ccfec46a154abfb0daf0f9b78460ea&quot;], &quot;lushness&quot;: [], &quot;relations&quot;: []}, &quot;period&quot;: {&quot;week_start&quot;: &quot;2026-11-09&quot;, &quot;week_end&quot;: &quot;2026-11-15&quot;, &quot;timezone&quot;: &quot;Asia/Shanghai&quot;}, &quot;weekly_delta&quot;: 10, &quot;score_rule&quot;: &quot;growth-v1-provisional&quot;}, &quot;effects&quot;: [], &quot;verification&quot;: {&quot;level&quot;: &quot;unavailable&quot;, &quot;label&quot;: &quot;参考成长分，依据去重的历史事实累计&quot;}}}, &quot;leaderboard.get&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;synthetic_design&quot;, &quot;source&quot;: &quot;docs/collaboration/PRODUCT-002.md&quot;, &quot;notes&quot;: &quot;新目标契约的设计样例，不是现有HTTP返回或真实儿童数据；所有参数是起点，待数据。&quot;}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;leaderboard.get&quot;, &quot;request_id&quot;: &quot;design-leaderboard-get&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;contract-example&quot;, &quot;version&quot;: &quot;1.0&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;contract_sample&quot;}, &quot;input&quot;: {&quot;group_id&quot;: &quot;authorized-demo-group&quot;}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;leaderboard.get&quot;, &quot;request_id&quot;: &quot;design-leaderboard-get&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;设计场景中的规则声明；不是现有接口返回&quot;}, &quot;effects&quot;: [], &quot;output&quot;: {&quot;group_id&quot;: &quot;authorized-demo-group&quot;, &quot;period&quot;: {&quot;week_start&quot;: &quot;2026-11-09&quot;, &quot;week_end&quot;: &quot;2026-11-15&quot;, &quot;timezone&quot;: &quot;Asia/Shanghai&quot;}, &quot;entries&quot;: [{&quot;rank&quot;: 1, &quot;nickname&quot;: &quot;青禾&quot;, &quot;growth_delta&quot;: 18, &quot;total&quot;: 28, &quot;components&quot;: {&quot;scale&quot;: 20, &quot;lushness&quot;: 6, &quot;relations&quot;: 2}, &quot;tree_thumbnail_ref&quot;: &quot;private-thumb-member-1&quot;}, {&quot;rank&quot;: 2, &quot;nickname&quot;: &quot;小松&quot;, &quot;growth_delta&quot;: 9, &quot;total&quot;: 16, &quot;components&quot;: {&quot;scale&quot;: 10, &quot;lushness&quot;: 6, &quot;relations&quot;: 0}, &quot;tree_thumbnail_ref&quot;: &quot;private-thumb-member-2&quot;}], &quot;self_entry&quot;: {&quot;rank&quot;: 1, &quot;nickname&quot;: &quot;青禾&quot;, &quot;growth_delta&quot;: 18, &quot;total&quot;: 28, &quot;components&quot;: {&quot;scale&quot;: 20, &quot;lushness&quot;: 6, &quot;relations&quot;: 2}, &quot;tree_thumbnail_ref&quot;: &quot;private-thumb-member-1&quot;}}}}, &quot;profile.dispute&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;synthetic_design&quot;, &quot;description&quot;: &quot;设计示例，非真实返回；不表示功能已经实现。&quot;}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;profile.dispute&quot;, &quot;request_id&quot;: &quot;example-profile-dispute&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;contract-example&quot;, &quot;version&quot;: &quot;1.0&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;contract_sample&quot;}, &quot;input&quot;: {&quot;inference_id&quot;: &quot;inference-F1-1&quot;, &quot;statement&quot;: &quot;这次是看错了符号，我想再试一次。&quot;}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;profile.dispute&quot;, &quot;request_id&quot;: &quot;example-profile-dispute&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;程序核对的示例结果&quot;}, &quot;effects&quot;: [{&quot;kind&quot;: &quot;record_feedback&quot;, &quot;id&quot;: &quot;dispute-1&quot;, &quot;idempotent_replay&quot;: false}, {&quot;kind&quot;: &quot;update_profile&quot;, &quot;id&quot;: &quot;contract_sample&quot;, &quot;idempotent_replay&quot;: false}], &quot;output&quot;: {&quot;dispute_id&quot;: &quot;dispute-1&quot;, &quot;inference_id&quot;: &quot;inference-F1-1&quot;, &quot;status&quot;: &quot;disputed&quot;, &quot;recorded&quot;: true}}}, &quot;profile.set_preference&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;synthetic_design&quot;, &quot;description&quot;: &quot;设计示例，非真实返回；不表示功能已经实现。&quot;}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;profile.set_preference&quot;, &quot;request_id&quot;: &quot;example-profile-set_preference&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;contract-example&quot;, &quot;version&quot;: &quot;1.0&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;contract_sample&quot;}, &quot;input&quot;: {&quot;preferences&quot;: {&quot;availability&quot;: {&quot;days&quot;: [1, 2, 3, 4, 5, 6, 7], &quot;time&quot;: &quot;19:30&quot;}, &quot;goal&quot;: &quot;explore&quot;, &quot;advance_opt_in&quot;: true}}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;profile.set_preference&quot;, &quot;request_id&quot;: &quot;example-profile-set_preference&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;程序核对的示例结果&quot;}, &quot;effects&quot;: [{&quot;kind&quot;: &quot;update_profile&quot;, &quot;id&quot;: &quot;contract_sample&quot;, &quot;idempotent_replay&quot;: false}], &quot;output&quot;: {&quot;preferences&quot;: {&quot;availability&quot;: {&quot;days&quot;: [1, 2, 3, 4, 5, 6, 7], &quot;time&quot;: &quot;19:30&quot;}, &quot;goal&quot;: &quot;explore&quot;, &quot;advance_opt_in&quot;: true}, &quot;saved&quot;: true}}}, &quot;quiz.answer&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;runtime_http&quot;, &quot;source&quot;: &quot;docs/architecture/examples/runtime/capture-f157d63a66b1.json&quot;, &quot;source_sha256&quot;: &quot;f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c&quot;, &quot;trace_index&quot;: 28, &quot;capture_script&quot;: &quot;tools/e2e_loop_check.py&quot;, &quot;scope&quot;: &quot;真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量&quot;, &quot;request_image_restored_from&quot;: null}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;quiz.answer&quot;, &quot;request_id&quot;: &quot;loop-quiz-answer-13&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;isolated-e2e&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;e2e_loop_local&quot;}, &quot;input&quot;: {&quot;quiz_id&quot;: &quot;f5a8b9485a7f47d1b4eb861dc14b447c&quot;, &quot;exercise_id&quot;: &quot;91a68e3db687417caab532104c9b5be6&quot;, &quot;answer&quot;: &quot;\\left(x - 7\\right) \\left(x + 7\\right)&quot;}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;request_id&quot;: &quot;loop-quiz-answer-13&quot;, &quot;operation&quot;: &quot;quiz.answer&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;output&quot;: {&quot;exercise_id&quot;: &quot;91a68e3db687417caab532104c9b5be6&quot;, &quot;correct&quot;: true, &quot;max_hint_level&quot;: 0, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;模板答案已经程序核验&quot;}, &quot;evidence_id&quot;: &quot;abc6dff77ce241799c5d70b818086eda&quot;, &quot;quiz_id&quot;: &quot;f5a8b9485a7f47d1b4eb861dc14b447c&quot;, &quot;duplicate&quot;: false, &quot;progress&quot;: {&quot;answered_count&quot;: 1, &quot;correct_count&quot;: 1, &quot;complete&quot;: false}, &quot;next_step&quot;: &quot;continue&quot;, &quot;reason&quot;: &quot;可以继续下一题，也可以随时退出，已答内容会保留。&quot;}, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;模板答案已经程序核验&quot;}, &quot;effects&quot;: [{&quot;kind&quot;: &quot;record_answer&quot;, &quot;id&quot;: &quot;abc6dff77ce241799c5d70b818086eda&quot;, &quot;idempotent_replay&quot;: false}]}}, &quot;quiz.start&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;runtime_http&quot;, &quot;source&quot;: &quot;docs/architecture/examples/runtime/capture-f157d63a66b1.json&quot;, &quot;source_sha256&quot;: &quot;f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c&quot;, &quot;trace_index&quot;: 24, &quot;capture_script&quot;: &quot;tools/e2e_loop_check.py&quot;, &quot;scope&quot;: &quot;真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量&quot;, &quot;request_image_restored_from&quot;: null}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;quiz.start&quot;, &quot;request_id&quot;: &quot;loop-quiz-start-9&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;isolated-e2e&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;e2e_loop_local&quot;}, &quot;input&quot;: {&quot;knowledge_id&quot;: &quot;F2&quot;, &quot;source_wrong_card_ids&quot;: [&quot;d345f56ff21840378fe7e5e9185c10da&quot;], &quot;review_id&quot;: &quot;F2&quot;}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;request_id&quot;: &quot;loop-quiz-start-9&quot;, &quot;operation&quot;: &quot;quiz.start&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;题组已由服务端核验并保存&quot;}, &quot;output&quot;: {&quot;quiz_id&quot;: &quot;f5a8b9485a7f47d1b4eb861dc14b447c&quot;, &quot;knowledge_id&quot;: &quot;F2&quot;, &quot;items&quot;: [{&quot;id&quot;: &quot;91a68e3db687417caab532104c9b5be6&quot;, &quot;prompt&quot;: &quot;分解因式或化简：\\(x^{2} - 49\\)。&quot;, &quot;difficulty_level&quot;: 1, &quot;difficulty_features&quot;: [&quot;基础条件&quot;, &quot;单步或同类运算&quot;], &quot;is_transfer&quot;: false, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;模板答案已经程序核验&quot;}}, {&quot;id&quot;: &quot;3072da308b8a40c9a306008b6a70c073&quot;, &quot;prompt&quot;: &quot;分解因式或化简：\\(x^{2} - 36\\)。&quot;, &quot;difficulty_level&quot;: 1, &quot;difficulty_features&quot;: [&quot;基础条件&quot;, &quot;单步或同类运算&quot;], &quot;is_transfer&quot;: false, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;模板答案已经程序核验&quot;}}, {&quot;id&quot;: &quot;f5ef844dd37249d7920c6ff4019d1d29&quot;, &quot;prompt&quot;: &quot;一块长方形的面积是 \\(4 x^{2} - 25\\)，一边长为 \\(2x+5\\)，且 \\(x&gt;5\\)。先用公式分解，再求另一边长。&quot;, &quot;difficulty_level&quot;: 2, &quot;difficulty_features&quot;: [&quot;应用面积条件建式&quot;, &quot;公式与约分组合&quot;], &quot;is_transfer&quot;: true, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;模板答案已经程序核验&quot;}}]}, &quot;effects&quot;: [{&quot;kind&quot;: &quot;start_quiz&quot;, &quot;id&quot;: &quot;f5a8b9485a7f47d1b4eb861dc14b447c&quot;, &quot;idempotent_replay&quot;: false}]}}, &quot;recommend.next&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;synthetic_design&quot;, &quot;description&quot;: &quot;设计示例，非真实返回；不表示功能已经实现。&quot;, &quot;notes&quot;: [&quot;stable阈值与每周进阶上限是Claude提出的初始设计参数，未用真实儿童数据验证。&quot;]}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;recommend.next&quot;, &quot;request_id&quot;: &quot;example-recommend-next&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;contract-example&quot;, &quot;version&quot;: &quot;1.0&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;contract_sample&quot;}, &quot;input&quot;: {&quot;limit&quot;: 1}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;recommend.next&quot;, &quot;request_id&quot;: &quot;example-recommend-next&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;ai_review&quot;, &quot;label&quot;: &quot;AI 分析，尚待核对&quot;}, &quot;effects&quot;: [], &quot;output&quot;: {&quot;items&quot;: [{&quot;id&quot;: &quot;recommend-F3-1&quot;, &quot;kind&quot;: &quot;advance&quot;, &quot;knowledge_id&quot;: &quot;F3&quot;, &quot;reason&quot;: &quot;在这个设计场景中，提公因式已有间隔复习证据，可以选择了解它的后继知识点。&quot;, &quot;based_on&quot;: [&quot;f-practice-1&quot;, &quot;f-practice-2&quot;], &quot;verification&quot;: {&quot;level&quot;: &quot;ai_review&quot;, &quot;label&quot;: &quot;推荐理由需结合真实学习事实复核&quot;}, &quot;prerequisite_stable_evidence&quot;: [{&quot;knowledge_id&quot;: &quot;F1&quot;, &quot;state&quot;: &quot;stable&quot;, &quot;based_on&quot;: [&quot;f-practice-1&quot;, &quot;f-practice-2&quot;], &quot;span_days&quot;: 3, &quot;independent_correct_count&quot;: 2, &quot;latest_without_hint&quot;: true}]}]}}}, &quot;review.complete&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;runtime_http&quot;, &quot;source&quot;: &quot;docs/architecture/examples/runtime/capture-f157d63a66b1.json&quot;, &quot;source_sha256&quot;: &quot;f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c&quot;, &quot;trace_index&quot;: 37, &quot;capture_script&quot;: &quot;tools/e2e_loop_check.py&quot;, &quot;scope&quot;: &quot;真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量&quot;, &quot;request_image_restored_from&quot;: null}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;review.complete&quot;, &quot;request_id&quot;: &quot;loop-review-complete&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;isolated-e2e&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;e2e_loop_local&quot;}, &quot;input&quot;: {&quot;review_id&quot;: &quot;F2&quot;, &quot;evidence_ids&quot;: [&quot;abc6dff77ce241799c5d70b818086eda&quot;, &quot;eeed35fec4334d0a82d82d7afdcbda10&quot;, &quot;7d4c62d0900140f7bb8f6e9978069a79&quot;], &quot;self_report&quot;: &quot;remembered&quot;}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;request_id&quot;: &quot;loop-review-complete&quot;, &quot;operation&quot;: &quot;review.complete&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;verified&quot;, &quot;label&quot;: &quot;答题记录支持本次有效复习&quot;}, &quot;output&quot;: {&quot;review_id&quot;: &quot;F2&quot;, &quot;completed&quot;: true, &quot;profile_fact_ids&quot;: [&quot;bb1741db4c324c229d68e0c722cbe04e&quot;], &quot;knowledge_card_eligible&quot;: false, &quot;knowledge_id&quot;: &quot;F2&quot;}, &quot;effects&quot;: [{&quot;kind&quot;: &quot;update_profile&quot;, &quot;id&quot;: &quot;bb1741db4c324c229d68e0c722cbe04e&quot;, &quot;idempotent_replay&quot;: false}]}}, &quot;review.today&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;runtime_http&quot;, &quot;source&quot;: &quot;docs/architecture/examples/runtime/capture-f157d63a66b1.json&quot;, &quot;source_sha256&quot;: &quot;f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c&quot;, &quot;trace_index&quot;: 16, &quot;capture_script&quot;: &quot;tools/e2e_loop_check.py&quot;, &quot;scope&quot;: &quot;真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量&quot;, &quot;request_image_restored_from&quot;: null}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;review.today&quot;, &quot;request_id&quot;: &quot;loop-review-today-8&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;isolated-e2e&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;e2e_loop_local&quot;}, &quot;input&quot;: {}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;request_id&quot;: &quot;loop-review-today-8&quot;, &quot;operation&quot;: &quot;review.today&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;output&quot;: {&quot;date&quot;: &quot;2026-11-14&quot;, &quot;timezone&quot;: &quot;Asia/Shanghai&quot;, &quot;items&quot;: [{&quot;id&quot;: &quot;F2&quot;, &quot;knowledge_id&quot;: &quot;F2&quot;, &quot;due_at&quot;: &quot;2026-11-14T19:42:11+08:00&quot;, &quot;reason&quot;: &quot;之前为平方差公式安排了复习，今天可以回来看看。&quot;, &quot;based_on&quot;: [&quot;d345f56ff21840378fe7e5e9185c10da&quot;], &quot;task&quot;: {&quot;kind&quot;: &quot;recall&quot;, &quot;prompt&quot;: &quot;先不看解法，说说平方差公式适合什么样的两项式。&quot;}}], &quot;reminder_allowed&quot;: true, &quot;reminder_key&quot;: &quot;7eb120f323dffce9faf64139483167ac84217351&quot;, &quot;message&quot;: &quot;今天有 1 个小任务：平方差公式的一个回忆问题。有空时可以从一项开始。&quot;}, &quot;effects&quot;: [], &quot;verification&quot;: {&quot;level&quot;: &quot;unavailable&quot;, &quot;label&quot;: &quot;来自保存的复习安排&quot;}}}, &quot;tree.get&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;runtime_http&quot;, &quot;source&quot;: &quot;docs/architecture/examples/runtime/capture-f157d63a66b1.json&quot;, &quot;source_sha256&quot;: &quot;f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c&quot;, &quot;trace_index&quot;: 40, &quot;capture_script&quot;: &quot;tools/e2e_loop_check.py&quot;, &quot;scope&quot;: &quot;真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量&quot;, &quot;request_image_restored_from&quot;: null}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;tree.get&quot;, &quot;request_id&quot;: &quot;loop-tree-get-25&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;isolated-e2e&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;e2e_loop_local&quot;}, &quot;input&quot;: {}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;request_id&quot;: &quot;loop-tree-get-25&quot;, &quot;operation&quot;: &quot;tree.get&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;output&quot;: {&quot;revision&quot;: 0, &quot;skeleton&quot;: [{&quot;id&quot;: &quot;F1&quot;, &quot;name&quot;: &quot;提公因式&quot;, &quot;pre&quot;: null}, {&quot;id&quot;: &quot;F2&quot;, &quot;name&quot;: &quot;平方差公式&quot;, &quot;pre&quot;: &quot;F1&quot;}, {&quot;id&quot;: &quot;F3&quot;, &quot;name&quot;: &quot;完全平方公式&quot;, &quot;pre&quot;: &quot;F1&quot;}, {&quot;id&quot;: &quot;F4&quot;, &quot;name&quot;: &quot;分解要彻底&quot;, &quot;pre&quot;: &quot;F2&quot;}, {&quot;id&quot;: &quot;F5&quot;, &quot;name&quot;: &quot;括号前的符号&quot;, &quot;pre&quot;: &quot;F1&quot;}, {&quot;id&quot;: &quot;R1&quot;, &quot;name&quot;: &quot;约分只能约因式&quot;, &quot;pre&quot;: &quot;F4&quot;}, {&quot;id&quot;: &quot;R2&quot;, &quot;name&quot;: &quot;约分要约到最简&quot;, &quot;pre&quot;: &quot;R1&quot;}, {&quot;id&quot;: &quot;R3&quot;, &quot;name&quot;: &quot;分式里的符号&quot;, &quot;pre&quot;: &quot;R1&quot;}, {&quot;id&quot;: &quot;N1&quot;, &quot;name&quot;: &quot;实数与数的运算&quot;, &quot;pre&quot;: null}, {&quot;id&quot;: &quot;N2&quot;, &quot;name&quot;: &quot;二次根式&quot;, &quot;pre&quot;: &quot;N1&quot;}, {&quot;id&quot;: &quot;N3&quot;, &quot;name&quot;: &quot;整式与幂的运算&quot;, &quot;pre&quot;: &quot;N1&quot;}, {&quot;id&quot;: &quot;N4&quot;, &quot;name&quot;: &quot;科学计数法&quot;, &quot;pre&quot;: &quot;N1&quot;}, {&quot;id&quot;: &quot;E1&quot;, &quot;name&quot;: &quot;一元一次方程&quot;, &quot;pre&quot;: &quot;N3&quot;}, {&quot;id&quot;: &quot;E2&quot;, &quot;name&quot;: &quot;二元一次方程组&quot;, &quot;pre&quot;: &quot;E1&quot;}, {&quot;id&quot;: &quot;E3&quot;, &quot;name&quot;: &quot;一元二次方程&quot;, &quot;pre&quot;: &quot;F2&quot;}, {&quot;id&quot;: &quot;E4&quot;, &quot;name&quot;: &quot;分式方程&quot;, &quot;pre&quot;: &quot;R1&quot;}, {&quot;id&quot;: &quot;I1&quot;, &quot;name&quot;: &quot;一元一次不等式&quot;, &quot;pre&quot;: &quot;E1&quot;}, {&quot;id&quot;: &quot;I2&quot;, &quot;name&quot;: &quot;不等式组&quot;, &quot;pre&quot;: &quot;I1&quot;}, {&quot;id&quot;: &quot;U1&quot;, &quot;name&quot;: &quot;平面直角坐标系&quot;, &quot;pre&quot;: null}, {&quot;id&quot;: &quot;U2&quot;, &quot;name&quot;: &quot;一次函数&quot;, &quot;pre&quot;: &quot;U1&quot;}, {&quot;id&quot;: &quot;U3&quot;, &quot;name&quot;: &quot;反比例函数&quot;, &quot;pre&quot;: &quot;U1&quot;}, {&quot;id&quot;: &quot;U4&quot;, &quot;name&quot;: &quot;二次函数&quot;, &quot;pre&quot;: &quot;E3&quot;}, {&quot;id&quot;: &quot;U5&quot;, &quot;name&quot;: &quot;函数与实际问题&quot;, &quot;pre&quot;: &quot;U2&quot;}, {&quot;id&quot;: &quot;G1&quot;, &quot;name&quot;: &quot;相交线与平行线&quot;, &quot;pre&quot;: null}, {&quot;id&quot;: &quot;G2&quot;, &quot;name&quot;: &quot;三角形与全等&quot;, &quot;pre&quot;: &quot;G1&quot;}, {&quot;id&quot;: &quot;G3&quot;, &quot;name&quot;: &quot;勾股定理&quot;, &quot;pre&quot;: &quot;G2&quot;}, {&quot;id&quot;: &quot;G4&quot;, &quot;name&quot;: &quot;四边形&quot;, &quot;pre&quot;: &quot;G2&quot;}, {&quot;id&quot;: &quot;G5&quot;, &quot;name&quot;: &quot;相似三角形&quot;, &quot;pre&quot;: &quot;G2&quot;}, {&quot;id&quot;: &quot;G6&quot;, &quot;name&quot;: &quot;圆&quot;, &quot;pre&quot;: &quot;G2&quot;}, {&quot;id&quot;: &quot;G7&quot;, &quot;name&quot;: &quot;图形变换与视图&quot;, &quot;pre&quot;: &quot;U1&quot;}, {&quot;id&quot;: &quot;G8&quot;, &quot;name&quot;: &quot;锐角三角函数&quot;, &quot;pre&quot;: &quot;G3&quot;}, {&quot;id&quot;: &quot;G9&quot;, &quot;name&quot;: &quot;几何推理与证明&quot;, &quot;pre&quot;: &quot;G2&quot;}, {&quot;id&quot;: &quot;S1&quot;, &quot;name&quot;: &quot;统计图表与数据收集&quot;, &quot;pre&quot;: null}, {&quot;id&quot;: &quot;S2&quot;, &quot;name&quot;: &quot;平均数中位数众数&quot;, &quot;pre&quot;: &quot;S1&quot;}, {&quot;id&quot;: &quot;S3&quot;, &quot;name&quot;: &quot;方差与数据波动&quot;, &quot;pre&quot;: &quot;S2&quot;}, {&quot;id&quot;: &quot;P1&quot;, &quot;name&quot;: &quot;事件与概率&quot;, &quot;pre&quot;: null}, {&quot;id&quot;: &quot;P2&quot;, &quot;name&quot;: &quot;列表与树状图概率&quot;, &quot;pre&quot;: &quot;P1&quot;}], &quot;placements&quot;: [], &quot;groups&quot;: [], &quot;links&quot;: []}, &quot;effects&quot;: [], &quot;verification&quot;: {&quot;level&quot;: &quot;unavailable&quot;, &quot;label&quot;: &quot;本机参考目录与自己整理的知识卡&quot;}}}, &quot;tree.move&quot;: {&quot;provenance&quot;: {&quot;kind&quot;: &quot;runtime_http&quot;, &quot;source&quot;: &quot;docs/architecture/examples/runtime/capture-f157d63a66b1.json&quot;, &quot;source_sha256&quot;: &quot;f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c&quot;, &quot;trace_index&quot;: 41, &quot;capture_script&quot;: &quot;tools/e2e_loop_check.py&quot;, &quot;scope&quot;: &quot;真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量&quot;, &quot;request_image_restored_from&quot;: null}, &quot;request&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;operation&quot;: &quot;tree.move&quot;, &quot;request_id&quot;: &quot;loop-tree-move-26&quot;, &quot;client&quot;: {&quot;type&quot;: &quot;web&quot;, &quot;name&quot;: &quot;isolated-e2e&quot;}, &quot;subject&quot;: {&quot;profile_id&quot;: &quot;e2e_loop_local&quot;}, &quot;input&quot;: {&quot;action&quot;: &quot;move&quot;, &quot;method&quot;: &quot;drag&quot;, &quot;card_id&quot;: &quot;681af5a02c9d4fda8611118297928347&quot;, &quot;parent_id&quot;: null, &quot;position&quot;: {&quot;x&quot;: 120, &quot;y&quot;: 80}, &quot;expected_revision&quot;: 0}, &quot;options&quot;: {&quot;language&quot;: &quot;zh-CN&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;svg&quot;]}}, &quot;response&quot;: {&quot;schema_version&quot;: &quot;1.0&quot;, &quot;request_id&quot;: &quot;loop-tree-move-26&quot;, &quot;operation&quot;: &quot;tree.move&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;verification&quot;: {&quot;level&quot;: &quot;unavailable&quot;, &quot;label&quot;: &quot;位置由你整理；关系仅对照本机参考目录&quot;}, &quot;output&quot;: {&quot;revision&quot;: 1, &quot;undo&quot;: {&quot;token&quot;: &quot;eed30a285fe6455ea71285c4c4bbecf5&quot;, &quot;previous_revision&quot;: 0}, &quot;placement&quot;: {&quot;card_id&quot;: &quot;681af5a02c9d4fda8611118297928347&quot;, &quot;parent_id&quot;: null, &quot;position&quot;: {&quot;x&quot;: 120, &quot;y&quot;: 80}}}, &quot;effects&quot;: [{&quot;kind&quot;: &quot;move_card&quot;, &quot;id&quot;: &quot;681af5a02c9d4fda8611118297928347&quot;, &quot;idempotent_replay&quot;: false}]}}}, &quot;labels&quot;: {&quot;recognize&quot;: &quot;识别与核对&quot;, &quot;study&quot;: &quot;整理错题卡&quot;, &quot;chat&quot;: &quot;围绕卡点探索&quot;, &quot;practice.create&quot;: &quot;准备迁移练习&quot;, &quot;practice.check&quot;: &quot;批改练习&quot;, &quot;schedule.set&quot;: &quot;设置空闲时间&quot;, &quot;profile.get&quot;: &quot;三层学习者画像&quot;, &quot;feedback.add&quot;: &quot;记录主观反馈&quot;, &quot;speech&quot;: &quot;语音适配&quot;, &quot;review.today&quot;: &quot;今日复习小任务&quot;, &quot;review.complete&quot;: &quot;完成复习&quot;, &quot;card.list&quot;: &quot;查看卡片&quot;, &quot;card.edit&quot;: &quot;孩子编辑卡片&quot;, &quot;tree.get&quot;: &quot;孩子的知识树&quot;, &quot;tree.move&quot;: &quot;孩子移动与整理&quot;, &quot;profile.set_preference&quot;: &quot;偏好与目标&quot;, &quot;profile.dispute&quot;: &quot;反驳系统推断&quot;, &quot;recommend.next&quot;: &quot;有依据的下一步&quot;, &quot;card.unlock&quot;: &quot;检验解锁知识卡&quot;, &quot;quiz.start&quot;: &quot;开始三题检验&quot;, &quot;quiz.answer&quot;: &quot;提交检验作答&quot;, &quot;growth.get&quot;: &quot;规模、茂盛度与关联&quot;, &quot;leaderboard.get&quot;: &quot;小组每周成长榜&quot;}}&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const root = document.getElementById(&#x27;hks-agent-harness&#x27;);
+  const data = JSON.parse(document.getElementById(&#x27;ah-contract-data&#x27;).textContent);
+  const clients = {web:&#x27;网页&#x27;,android:&#x27;Android&#x27;,esp32:&#x27;硬件设备&#x27;,tool:&#x27;AI 工具&#x27;,other:&#x27;其他系统&#x27;};
+  const details = {
+    adapter:&#x27;适配器只转换设备、传输与显示形式；不复制 Agent 的诊断、教学或记分逻辑。&#x27;,
+    contract:&#x27;各调用方共用版本化输入输出契约；具体字段由同一 Schema 校验。&#x27;,
+    agent:&#x27;Agent 编排错题卡、复习、知识卡、个人树、画像与推荐；当前领域是初中数学，主线已通过12段HTTP自测，画像推荐等仍待后续。&#x27;,
+    harness:&#x27;Harness 包围 Agent 的执行，提供上下文、工具边界、运行限制、输出核验和记录。&#x27;,
+    model:&#x27;读图使用 gpt-6.1-sol；模型负责读与讲，不能代替程序核验或自己改学习记录。&#x27;,
+    tools:&#x27;工具按允许的能力调用；符号校验、练习、排期与数据访问通过明确接口连接。&#x27;,
+    storage:&#x27;档案由数据适配器维护；浏览器编号不是正式身份认证，目标架构仍需实现授权。&#x27;,
+    entry:&#x27;先检查输入、调用来源和允许操作；客户端不能自行授予工具权限。&#x27;,
+    context:&#x27;按会话与学习记录装配上下文，模型看到的内容不能改变可信规则。&#x27;,
+    budget:&#x27;限制执行时间、请求与工具消耗；失败明确返回，不暗中重复付费请求。&#x27;,
+    quality:&#x27;区分程序核验、AI 分析和待核对；保留学生真实错误与提示等级边界。&#x27;,
+    commit:&#x27;需要确认的结果不直接写学习进度；重复请求不能重复计数或推进复习。&#x27;,
+    trace:&#x27;记录版本、阶段、耗时和验证依据；普通日志不保存密钥或原始儿童资料。&#x27;
+  };
+  const gates={
+    H0:&#x27;H0 · 检查大小、格式、步数和幂等；失败拒绝。已有统一入口与输入校验，仍须核对每项具体边界。&#x27;,
+    H1:&#x27;H1 · 输出须符合 Schema；不合格不放行。统一入口按权威JSON Schema做运行时校验。&#x27;,
+    H2:&#x27;H2 · 可支持的数学由程序核验；其他标 AI 待核对，不能据此自动记错或点亮。&#x27;,
+    H3:&#x27;H3 · 低级提示不泄露最终结果；检查失败回退到已核对提示并标注。已有部分基础。&#x27;,
+    H4:&#x27;H4 · 口吻具体、不贴标签；失败重写或回退。待实施。&#x27;,
+    H5:&#x27;H5 · 情绪表达使用预设策略，并提示监护人关注。待实施。&#x27;,
+    H6:&#x27;H6 · 公式口语化、控制长度，为硬件提供简版文本。语音适配待实施。&#x27;,
+    H7:&#x27;H7 · 用学生同题书写作为模糊字符推断依据，保留真实错误；不足时给候选。独立任务待验收。&#x27;
+  };
+  const habits={
+    trigger:&#x27;触发：学校错题引出首次拍题；下一轮由合适时间的具体复习任务承接。提醒客户端已联调，实际通知可见性待独立验收。&#x27;,
+    action:&#x27;行动：三题全对且无提示升档、两题对保持、至多一题对降档；连续两组困难则回讲解。均为起点，可随时停。&#x27;,
+    reward:&#x27;酬赏：三题至少两题合格正确，含迁移、全组verified、合格题未用完整解法、服务端保存才解锁。复习每点最多计3次、关联最多20条；本阶段不做随机酬赏。&#x27;,
+    investment:&#x27;投入：用自己的话补笔记、整理知识关联并积累偏好，下一次复习据此更贴合孩子。&#x27;
+  };
+  let currentClient=&#x27;web&#x27;,currentOperation=&#x27;review.today&#x27;,currentGate=null,currentHabit=&#x27;trigger&#x27;;
+  const operationSelect=document.getElementById(&#x27;ah-operation&#x27;);
+  Object.entries(data.examples).forEach(([operation,example])=&gt;{
+    const option=document.createElement(&#x27;option&#x27;);option.value=operation;option.textContent=operation+&#x27; · &#x27;+data.labels[operation];operationSelect.appendChild(option);
+  });
+  function applyClient(value) {
+    currentClient=clients[value]?value:&#x27;web&#x27;;
+    root.querySelectorAll(&#x27;[data-client]&#x27;).forEach(button =&gt; button.setAttribute(&#x27;aria-pressed&#x27;,String(button.dataset.client===currentClient)));
+    const example=data.examples[currentOperation];
+    operationSelect.value=currentOperation;
+    const request=JSON.parse(JSON.stringify(example.request));
+    request.client.type=currentClient;
+    request.options.modalities=currentClient===&#x27;esp32&#x27;?[&#x27;text&#x27;,&#x27;audio&#x27;]:[&#x27;text&#x27;,&#x27;svg&#x27;];
+    document.getElementById(&#x27;ah-request&#x27;).textContent=JSON.stringify(request,null,2);
+    document.getElementById(&#x27;ah-response&#x27;).textContent=JSON.stringify(example.response,null,2);
+    document.getElementById(&#x27;ah-origin&#x27;).textContent=example.provenance.kind===&#x27;runtime_http&#x27;?&#x27;真实HTTP输出 · 假模型 / 调用方适配示意&#x27;:(example.provenance.kind===&#x27;synthetic_design&#x27;?&#x27;历史设计样例 · 非运行证据&#x27;:&#x27;历史结果投影 · 非统一入口抓包&#x27;);
+    const growthActive=document.getElementById(&#x27;ah-tab-growth&#x27;).getAttribute(&#x27;aria-selected&#x27;)===&#x27;true&#x27;;
+    document.getElementById(&#x27;ah-detail&#x27;).textContent=growthActive?habits[currentHabit]:(currentGate?gates[currentGate]:clients[currentClient]+&#x27; → 同一 Agent / Harness → &#x27;+currentOperation+&#x27;；提醒由终端承担。&#x27;);
+  }
+  function save() {
+    const tab=root.querySelector(&#x27;[role=&quot;tab&quot;][aria-selected=&quot;true&quot;]&#x27;);
+    if(window.openai &amp;&amp; typeof window.openai.setWidgetState===&#x27;function&#x27;) {
+      window.openai.setWidgetState({modelContent:{caller:currentClient,operation:currentOperation,gate:currentGate,habit:currentHabit},privateContent:{tab:tab?tab.id:&#x27;ah-tab-system&#x27;}}).catch(()=&gt;{});
+    }
+  }
+  function restore(saved) {
+    const state=saved||{};
+    const model=state.modelContent||state;
+    currentOperation=data.examples[model.operation]?model.operation:&#x27;review.today&#x27;;
+    currentGate=gates[model.gate]?model.gate:null;
+    currentHabit=habits[model.habit]?model.habit:&#x27;trigger&#x27;;
+    root.querySelectorAll(&#x27;[data-habit]&#x27;).forEach(button=&gt;button.setAttribute(&#x27;aria-pressed&#x27;,String(button.dataset.habit===currentHabit)));
+    applyClient(state.modelContent&amp;&amp;state.modelContent.caller||state.caller||&#x27;web&#x27;);
+    const tab=state.privateContent&amp;&amp;state.privateContent.tab;
+    if(tab&amp;&amp;root.querySelector(&#x27;#&#x27;+tab)) {
+      root.querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;).forEach(button=&gt;{
+        const active=button.id===tab;
+        button.setAttribute(&#x27;aria-selected&#x27;,String(active));button.classList.toggle(&#x27;active&#x27;,active);
+        document.getElementById(button.getAttribute(&#x27;aria-controls&#x27;)).hidden=!active;
+      });
+    }
+    if(tab===&#x27;ah-tab-growth&#x27;)document.getElementById(&#x27;ah-detail&#x27;).textContent=habits[currentHabit];
+  }
+  root.querySelectorAll(&#x27;[data-client]&#x27;).forEach(button=&gt;button.addEventListener(&#x27;click&#x27;,()=&gt;{applyClient(button.dataset.client);save();}));
+  root.querySelectorAll(&#x27;[data-habit]&#x27;).forEach(button=&gt;button.addEventListener(&#x27;click&#x27;,()=&gt;{currentHabit=button.dataset.habit;root.querySelectorAll(&#x27;[data-habit]&#x27;).forEach(item=&gt;item.setAttribute(&#x27;aria-pressed&#x27;,String(item===button)));document.getElementById(&#x27;ah-detail&#x27;).textContent=habits[currentHabit];save();}));
+  root.querySelectorAll(&#x27;[data-node]&#x27;).forEach(button=&gt;button.addEventListener(&#x27;click&#x27;,()=&gt;{document.getElementById(&#x27;ah-detail&#x27;).textContent=details[button.dataset.node];}));
+  root.querySelectorAll(&#x27;[data-gate]&#x27;).forEach(button=&gt;button.addEventListener(&#x27;click&#x27;,()=&gt;{currentGate=button.dataset.gate;document.getElementById(&#x27;ah-detail&#x27;).textContent=gates[currentGate];save();}));
+  root.querySelectorAll(&#x27;[data-operation]&#x27;).forEach(button=&gt;button.addEventListener(&#x27;click&#x27;,()=&gt;{currentOperation=button.dataset.operation;currentGate=null;applyClient(currentClient);document.getElementById(&#x27;ah-tab-contract&#x27;).click();save();}));
+  operationSelect.addEventListener(&#x27;change&#x27;,()=&gt;{currentOperation=operationSelect.value;currentGate=null;applyClient(currentClient);save();});
+  root.querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;).forEach(button=&gt;button.addEventListener(&#x27;click&#x27;,()=&gt;{if(button.id===&#x27;ah-tab-growth&#x27;)document.getElementById(&#x27;ah-detail&#x27;).textContent=habits[currentHabit];setTimeout(save,0);}));
+  window.addEventListener(&#x27;openai:set_globals&#x27;,event=&gt;{const globals=event.detail&amp;&amp;event.detail.globals;if(globals&amp;&amp;globals.widgetState)restore(globals.widgetState);});
+  restore(window.openai&amp;&amp;window.openai.widgetState);
+})();
+&lt;/script&gt;
+
+
+
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+  let lastPointerWasTouch = false;
+  let pinnedByTouch = false;
+
+  const getTrigger = (event) =&gt; {
+    for (const target of event.composedPath()) {
+      if (target?.nodeType === Node.ELEMENT_NODE) {
+        const trigger = target.closest(&quot;[data-tooltip]&quot;);
+        if (trigger) return trigger;
+      }
+    }
+    return null;
+  };
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    pinnedByTouch = false;
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handlePointer = (event) =&gt; {
+    lastPointerWasTouch =
+      event.type === &quot;pointerdown&quot; &amp;&amp; event.pointerType === &quot;touch&quot;;
+  };
+  const handleTouchClick = (event) =&gt; {
+    const isTouch = event.pointerType === &quot;touch&quot; || lastPointerWasTouch;
+    lastPointerWasTouch = false;
+    if (!isTouch || event.detail === 0) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (
+      trigger == null ||
+      !trigger.isConnected ||
+      getContent(trigger).length === 0 ||
+      (pinnedByTouch &amp;&amp; activeTrigger === trigger)
+    ) {
+      if (pinnedByTouch) {
+        closeTooltip();
+      }
+      return;
+    }
+    openTooltip(trigger);
+    pinnedByTouch = activeTrigger === trigger;
+    window.setTimeout(() =&gt; {
+      if (activeTrigger === trigger &amp;&amp; !trigger.isConnected) {
+        closeTooltip(false);
+      }
+    }, 0);
+  };
+  const handleLeave = (event) =&gt; {
+    if (pinnedByTouch) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    lastPointerWasTouch = false;
+    const trigger = getTrigger(event);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handlers = {
+    pointerover: handlePointerOpen,
+    pointerdown: handlePointer,
+    pointercancel: handlePointer,
+    click: handleTouchClick,
+    pointerout: handleLeave,
+    focusin: handleFocusIn,
+    focusout: handleLeave,
+    keydown: handleKeyDown,
+    contextmenu: handleContextMenu,
+  };
+  const roots = new Map();
+  const handledEvents = new WeakSet();
+  const handleEvent = (event) =&gt; {
+    if (handledEvents.has(event)) return;
+    handledEvents.add(event);
+    handlers[event.type](event);
+  };
+  const discoverRoots = (node) =&gt; {
+    if (node.shadowRoot) listen(node.shadowRoot);
+    for (const element of node.querySelectorAll(&quot;*&quot;)) {
+      if (element.shadowRoot) listen(element.shadowRoot);
+    }
+  };
+  const listen = (root) =&gt; {
+    if (roots.has(root)) return;
+    for (const type of Object.keys(handlers)) root.addEventListener(type, handleEvent);
+    const observer = new window.MutationObserver((records) =&gt; {
+      for (const { addedNodes } of records) {
+        for (const node of addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) discoverRoots(node);
+        }
+      }
+      for (const [root, cleanup] of roots) {
+        if (root.host &amp;&amp; !root.host.isConnected) {
+          cleanup();
+          roots.delete(root);
+        }
+      }
+      if (activeTrigger &amp;&amp; !activeTrigger.isConnected) closeTooltip(false);
+    });
+    observer.observe(root, { childList: true, subtree: true });
+    roots.set(root, () =&gt; {
+      observer.disconnect();
+      for (const type of Object.keys(handlers)) root.removeEventListener(type, handleEvent);
+    });
+    discoverRoots(root);
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    lastPointerWasTouch = false;
+    for (const cleanup of roots.values()) cleanup();
+    roots.clear();
+    tooltip = null;
+  };
+
+  // Events between children of one shadow root never reach the document.
+  listen(document);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-tabs&quot;&gt;
+(() =&gt; {
+  const selector = &#x27;.nav[role=&quot;tablist&quot;] [role=&quot;tab&quot;]&#x27;;
+  const disabled = &#x27;:disabled,[aria-disabled=&quot;true&quot;]&#x27;;
+  const selectTab = (selected) =&gt; {
+    const panelId = selected.getAttribute(&quot;aria-controls&quot;);
+    for (const tab of selected.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;)) {
+      const active = tab === selected;
+      tab.classList.toggle(&quot;active&quot;, active);
+      tab.setAttribute(&quot;aria-selected&quot;, String(active));
+      const id = tab.getAttribute(&quot;aria-controls&quot;);
+      const panel = id &amp;&amp; document.getElementById(id);
+      if (panel != null) {
+        panel.hidden = id !== panelId;
+        if (!panel.hidden &amp;&amp; selected.id) {
+          panel.setAttribute(&quot;aria-labelledby&quot;, selected.id);
+        }
+      }
+    }
+  };
+  const interact = (event) =&gt; {
+    const tab = event.target?.closest?.(selector);
+    if (event.defaultPrevented || tab == null || tab.matches(disabled)) {
+      return;
+    }
+    if (event.type === &quot;click&quot;) {
+      selectTab(tab);
+      return;
+    }
+    const tabs = Array.from(
+      tab.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;),
+    ).filter((candidate) =&gt; !candidate.matches(disabled));
+    const current = tabs.indexOf(tab);
+    let next;
+    if (event.key === &quot;ArrowRight&quot; || event.key === &quot;ArrowDown&quot;) {
+      next = (current + 1) % tabs.length;
+    } else if (event.key === &quot;ArrowLeft&quot; || event.key === &quot;ArrowUp&quot;) {
+      next = (current + tabs.length - 1) % tabs.length;
+    } else if (event.key === &quot;Home&quot;) {
+      next = 0;
+    } else if (event.key === &quot;End&quot;) {
+      next = tabs.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    tabs[next].focus();
+    selectTab(tabs[next]);
+  };
+
+  for (const list of document.querySelectorAll(&#x27;.nav[role=&quot;tablist&quot;]&#x27;)) {
+    const selected =
+      list.querySelector(&#x27;[role=&quot;tab&quot;][aria-selected=&quot;true&quot;]&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;].active&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;]&#x27;);
+    if (selected != null) {
+      selectTab(selected);
+    }
+  }
+  document.addEventListener(&quot;click&quot;, interact);
+  document.addEventListener(&quot;keydown&quot;, interact);
+  window.addEventListener(&quot;pagehide&quot;, () =&gt; {
+    document.removeEventListener(&quot;click&quot;, interact);
+    document.removeEventListener(&quot;keydown&quot;, interact);
+  }, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-carousel&quot;&gt;
+  (() =&gt; {
+    for (const root of document.querySelectorAll(&quot;.viz-carousel&quot;)) {
+      const panels = Array.from(
+        root.querySelectorAll(&quot;:scope &gt; [data-variant]&quot;),
+      );
+      if (panels.length === 0) {
+        continue;
+      }
+      root.setAttribute(&quot;role&quot;, &quot;group&quot;);
+      panels.forEach((panel, index) =&gt; {
+        panel.hidden = index !== 0;
+        panel.setAttribute(&quot;role&quot;, &quot;group&quot;);
+        if (!panel.hasAttribute(&quot;aria-label&quot;)) {
+          panel.setAttribute(&quot;aria-label&quot;, panel.dataset.variant);
+        }
+      });
+      root.dataset.activeVariant = panels[0].dataset.variant;
+      if (panels.length === 1) {
+        continue;
+      }
+
+      const controls = document.createElement(&quot;div&quot;);
+      controls.className = &quot;viz-carousel-controls&quot;;
+      // Portable copy of the settings dropdown&#x27;s legacy glyph; no 14px icon-package preset matches it.
+      // https://github.com/openai/openai/blob/master/codex/codex-apps/webview/src/icons/chevron.svg
+      controls.innerHTML = `
+      &lt;button type=&quot;button&quot; class=&quot;viz-carousel-previous cursor-interaction&quot;&gt;&lt;i data-lucide=&quot;chevron-left&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;
+      &lt;details class=&quot;viz-carousel-picker&quot;&gt;
+        &lt;summary class=&quot;cursor-interaction&quot;&gt;
+          &lt;span class=&quot;viz-carousel-count tabular-nums&quot;&gt;&lt;/span&gt;
+          &lt;span class=&quot;viz-carousel-name&quot;&gt;&lt;/span&gt;
+          &lt;svg class=&quot;viz-carousel-caret&quot; width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 20 21&quot; fill=&quot;none&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
+            &lt;path d=&quot;M15.2793 7.71101C15.539 7.45131 15.961 7.45131 16.2207 7.71101C16.4804 7.97071 16.4804 8.39272 16.2207 8.65242L10.4707 14.4024C10.211 14.6621 9.78902 14.6621 9.52932 14.4024L3.77932 8.65242L3.69436 8.54792C3.52385 8.28979 3.55205 7.93828 3.77932 7.71101C4.00659 7.48374 4.3581 7.45554 4.61623 7.62605L4.72073 7.71101L10 12.9903L15.2793 7.71101Z&quot; fill=&quot;currentColor&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;0.6&quot; /&gt;
+          &lt;/svg&gt;
+        &lt;/summary&gt;
+        &lt;div class=&quot;viz-carousel-options&quot;&gt;&lt;/div&gt;
+      &lt;/details&gt;
+      &lt;button type=&quot;button&quot; class=&quot;viz-carousel-next cursor-interaction&quot;&gt;&lt;i data-lucide=&quot;chevron-right&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;`;
+      const previous = controls.querySelector(&quot;.viz-carousel-previous&quot;);
+      const next = controls.querySelector(&quot;.viz-carousel-next&quot;);
+      const picker = controls.querySelector(&quot;.viz-carousel-picker&quot;);
+      const summary = picker.querySelector(&quot;summary&quot;);
+      const count = controls.querySelector(&quot;.viz-carousel-count&quot;);
+      const name = controls.querySelector(&quot;.viz-carousel-name&quot;);
+      const options = controls.querySelector(&quot;.viz-carousel-options&quot;);
+      const status = document.createElement(&quot;span&quot;);
+      status.className = &quot;sr-only&quot;;
+      status.setAttribute(&quot;role&quot;, &quot;status&quot;);
+      status.setAttribute(&quot;aria-live&quot;, &quot;polite&quot;);
+      status.setAttribute(&quot;aria-atomic&quot;, &quot;true&quot;);
+      previous.setAttribute(
+        &quot;aria-label&quot;,
+        root.dataset.previousLabel ?? &quot;Previous variant&quot;,
+      );
+      next.setAttribute(&quot;aria-label&quot;, root.dataset.nextLabel ?? &quot;Next variant&quot;);
+
+      let active = 0;
+      let mousePointerId = null;
+      let summaryPointerHandled = false;
+      summary.addEventListener(&quot;pointerdown&quot;, (event) =&gt; {
+        summaryPointerHandled =
+          event.pointerType === &quot;mouse&quot; &amp;&amp; event.button === 0 &amp;&amp; !event.ctrlKey;
+        if (!summaryPointerHandled) {
+          return;
+        }
+        event.preventDefault();
+        summary.focus({ preventScroll: true });
+        picker.open = !picker.open;
+        mousePointerId = picker.open ? event.pointerId : null;
+      });
+      summary.addEventListener(&quot;click&quot;, (event) =&gt; {
+        if (summaryPointerHandled &amp;&amp; event.detail &gt; 0) {
+          event.preventDefault();
+        }
+      });
+      const choices = panels.map((panel, index) =&gt; {
+        const choice = document.createElement(&quot;button&quot;);
+        choice.type = &quot;button&quot;;
+        choice.className = &quot;cursor-interaction&quot;;
+        choice.textContent = panel.dataset.variant;
+        choice.addEventListener(&quot;click&quot;, () =&gt; {
+          select(index);
+          summary.focus();
+        });
+        choice.addEventListener(&quot;pointerup&quot;, (event) =&gt; {
+          if (
+            picker.open &amp;&amp;
+            event.pointerType === &quot;mouse&quot; &amp;&amp;
+            event.button === 0 &amp;&amp;
+            event.pointerId === mousePointerId
+          ) {
+            choice.click();
+          }
+        });
+        options.appendChild(choice);
+        return choice;
+      });
+      const select = (index) =&gt; {
+        const changed = active !== index;
+        active = index;
+        panels.forEach((panel, position) =&gt; {
+          panel.hidden = position !== active;
+          choices[position].setAttribute(
+            &quot;aria-current&quot;,
+            String(position === active),
+          );
+        });
+        root.dataset.activeVariant = panels[active].dataset.variant;
+        count.textContent = `${active + 1} / ${panels.length}`;
+        name.textContent = panels[active].dataset.variant;
+        picker.open = false;
+        mousePointerId = null;
+        if (changed) {
+          status.textContent = `${count.textContent}: ${name.textContent}`;
+        }
+      };
+      previous.addEventListener(&quot;click&quot;, () =&gt;
+        select((active + panels.length - 1) % panels.length),
+      );
+      next.addEventListener(&quot;click&quot;, () =&gt;
+        select((active + 1) % panels.length),
+      );
+      picker.addEventListener(&quot;keydown&quot;, (event) =&gt; {
+        if (event.key === &quot;Escape&quot; &amp;&amp; picker.open) {
+          event.preventDefault();
+          picker.open = false;
+          mousePointerId = null;
+          summary.focus();
+          return;
+        }
+        if (event.altKey || event.ctrlKey || event.metaKey) {
+          return;
+        }
+        const index = choices.indexOf(document.activeElement);
+        let nextIndex;
+        if (event.key === &quot;ArrowDown&quot;) {
+          nextIndex = index &lt; 0 ? active : (index + 1) % choices.length;
+        } else if (event.key === &quot;ArrowUp&quot;) {
+          nextIndex = index &lt; 0 ? active : (index + choices.length - 1) % choices.length;
+        } else if (picker.open &amp;&amp; event.key === &quot;Home&quot;) {
+          nextIndex = 0;
+        } else if (picker.open &amp;&amp; event.key === &quot;End&quot;) {
+          nextIndex = choices.length - 1;
+        } else {
+          return;
+        }
+        event.preventDefault();
+        picker.open = true;
+        choices[nextIndex].focus();
+      });
+      picker.addEventListener(&quot;focusout&quot;, (event) =&gt; {
+        if (!picker.contains(event.relatedTarget)) {
+          picker.open = false;
+          mousePointerId = null;
+        }
+      });
+      const dismiss = (event) =&gt; {
+        if (!summary.contains(event.target)) {
+          mousePointerId = null;
+        }
+        if (!picker.contains(event.target)) {
+          picker.open = false;
+        }
+      };
+      const endPointerSelection = () =&gt; {
+        mousePointerId = null;
+      };
+      const sizePicker = () =&gt; {
+        root.style.setProperty(
+          &quot;--viz-carousel-picker-height&quot;,
+          `${picker.open ? options.offsetHeight : 0}px`,
+        );
+      };
+      picker.addEventListener(&quot;toggle&quot;, sizePicker);
+      window.addEventListener(&quot;resize&quot;, sizePicker);
+      document.addEventListener(&quot;pointerdown&quot;, dismiss);
+      document.addEventListener(&quot;pointerup&quot;, endPointerSelection);
+      document.addEventListener(&quot;pointercancel&quot;, endPointerSelection);
+      window.addEventListener(&quot;blur&quot;, endPointerSelection);
+      window.addEventListener(
+        &quot;pagehide&quot;,
+        () =&gt; {
+          document.removeEventListener(&quot;pointerdown&quot;, dismiss);
+          document.removeEventListener(&quot;pointerup&quot;, endPointerSelection);
+          document.removeEventListener(&quot;pointercancel&quot;, endPointerSelection);
+          window.removeEventListener(&quot;blur&quot;, endPointerSelection);
+          window.removeEventListener(&quot;resize&quot;, sizePicker);
+        },
+        { once: true },
+      );
+      root.append(controls, status);
+      select(0);
+    }
+  })();
+&lt;/script&gt;
+
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+
+<script>(() => {
+  const frame = document.getElementById("codex-visualization");
+  if (!(frame instanceof HTMLIFrameElement)) {
+    return;
+  }
+  const isShare = document.documentElement.classList.contains(
+    "visualization-share-root",
+  );
+  let viewportHeight = globalThis.innerHeight;
+  let sizeFingerprint = null;
+  let sizeWriteTimeout;
+  let lastSize = null;
+  let pendingSize = null;
+  const storageKey = `codex:visualization-widget-state-v2:${JSON.stringify([
+    globalThis.location.pathname,
+    globalThis.location.search,
+  ])}`;
+  const sizeStorageKey = `${storageKey}:share-size-v1`;
+  const parseState = (serializedState) => {
+    if (
+      typeof serializedState !== "string" ||
+      new TextEncoder().encode(serializedState).length > 16 * 1024
+    ) {
+      throw new TypeError(
+        "Widget state must be a JSON object of at most 16 KiB",
+      );
+    }
+    /** @type {unknown} */
+    const state = JSON.parse(serializedState);
+    if (
+      state == null ||
+      typeof state !== "object" ||
+      Array.isArray(state) ||
+      ("imageIds" in state &&
+        (!Array.isArray(state.imageIds) || state.imageIds.length > 0))
+    ) {
+      throw new TypeError("Widget state must be a JSON object");
+    }
+    const storedState = { modelContent: null, privateContent: null, ...state };
+    const canonicalState = JSON.stringify(
+      storedState,
+      (_key, /** @type {unknown} */ value) => {
+        if (typeof value === "number" && !Number.isFinite(value)) {
+          throw new TypeError("Widget state must contain finite numbers");
+        }
+        return value;
+      },
+    );
+    if (new TextEncoder().encode(canonicalState).length > 16 * 1024) {
+      throw new TypeError(
+        "Widget state must be a JSON object of at most 16 KiB",
+      );
+    }
+    return storedState;
+  };
+  let storage = null;
+  let state = null;
+  try {
+    const localStorage = globalThis.localStorage;
+    const probeKey = `${storageKey}:probe`;
+    localStorage.setItem(probeKey, "1");
+    localStorage.removeItem(probeKey);
+    storage = localStorage;
+    const savedState = storage.getItem(storageKey);
+    if (savedState != null) {
+      try {
+        state = parseState(savedState);
+      } catch {
+        // Invalid saved state does not disable future writes.
+      }
+    }
+  } catch {
+    storage = null;
+  }
+  const persistSize = () => {
+    globalThis.clearTimeout(sizeWriteTimeout);
+    if (pendingSize == null) {
+      return;
+    }
+    try {
+      storage?.setItem(sizeStorageKey, pendingSize);
+    } catch {
+      // A denied or full cache must not affect the visualization.
+    }
+    pendingSize = null;
+  };
+  if (isShare) {
+    globalThis.addEventListener("pagehide", persistSize);
+  }
+  const initialGlobals = {
+    widgetState: state,
+    statePersistence: storage == null ? "none" : "local",
+  };
+
+  const channel = new MessageChannel();
+  channel.port1.addEventListener("message", (event) => {
+    const data = event.data;
+    if (typeof data !== "object" || data == null) {
+      return;
+    }
+    if (data.type === "widget-state-write") {
+      if (!Number.isSafeInteger(data.id) || data.id <= 0) {
+        return;
+      }
+      let ok = false;
+      try {
+        if (storage != null) {
+          const state = parseState(data.state);
+          storage.setItem(storageKey, JSON.stringify(state));
+          ok = true;
+        }
+      } catch {
+        // Storage denial, quota limits, and invalid state return a failed receipt.
+      }
+      channel.port1.postMessage({
+        type: "widget-state-result",
+        id: data.id,
+        ok,
+      });
+      return;
+    }
+    if (data.type === "height") {
+      const height = data.height;
+      if (
+        typeof height !== "number" ||
+        !Number.isFinite(height) ||
+        height < 0
+      ) {
+        return;
+      }
+      if (height <= 10_000) {
+        const width = isShare && storage != null ? frame.clientWidth : null;
+        frame.style.height = Math.ceil(height) + "px";
+        if (isShare && storage != null) {
+          const size = JSON.stringify({
+            fingerprint: sizeFingerprint,
+            width,
+            viewportHeight: globalThis.innerHeight,
+            dark: globalThis.matchMedia("(prefers-color-scheme: dark)").matches,
+            scale: globalThis.devicePixelRatio,
+            height: Math.ceil(height),
+          });
+          if (size !== lastSize) {
+            lastSize = size;
+            pendingSize = size;
+            globalThis.clearTimeout(sizeWriteTimeout);
+            sizeWriteTimeout = globalThis.setTimeout(persistSize, 100);
+          }
+        }
+      }
+      if (isShare) {
+        // Keep unusually tall content accessible without accepting an unbounded height.
+        if (height > 10_000 && Number.parseFloat(frame.style.height) === 0) {
+          frame.style.removeProperty("height");
+        }
+        frame.scrolling = height > 10_000 ? "auto" : "no";
+        document.documentElement.classList.add("visualization-share-ready");
+      }
+      return;
+    }
+    if (data.type === "scroll-to") {
+      const top = data.top;
+      if (
+        typeof top === "number" &&
+        Number.isFinite(top) &&
+        top >= 0 &&
+        globalThis.navigator.userActivation?.isActive === true
+      ) {
+        globalThis.scrollTo({
+          top: Math.ceil(
+            globalThis.scrollY + frame.getBoundingClientRect().top + top,
+          ),
+        });
+      }
+      return;
+    }
+    if (data.type === "open-external") {
+      const rawHref = data.href;
+      if (typeof rawHref !== "string") {
+        return;
+      }
+      let href;
+      try {
+        const url = new URL(rawHref, document.baseURI);
+        if (url.protocol !== "https:") {
+          return;
+        }
+        href = url.href;
+      } catch {
+        return;
+      }
+      if (globalThis.navigator.userActivation?.isActive === true) {
+        const anchor = document.createElement("a");
+        anchor.href = href;
+        anchor.rel = "noopener noreferrer";
+        anchor.target = "_blank";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+      }
+      return;
+    }
+    if (data.type === "follow-up") {
+      const prompt = data.prompt;
+      if (
+        typeof prompt !== "string" ||
+        globalThis.navigator.userActivation?.isActive !== true
+      ) {
+        return;
+      }
+      const title = data.title;
+      globalThis.prompt(typeof title === "string" ? title : prompt, prompt);
+    }
+  });
+  channel.port1.start();
+  const srcdoc = frame.dataset.srcdoc;
+  if (srcdoc == null) {
+    return;
+  }
+  globalThis.addEventListener("resize", () => {
+    const height = Number.parseFloat(frame.style.height);
+    if (!isShare && (!Number.isFinite(height) || height <= viewportHeight)) {
+      frame.style.removeProperty("height");
+    }
+    viewportHeight = globalThis.innerHeight;
+    channel.port1.postMessage({ type: "measure" });
+  });
+  frame.addEventListener(
+    "load",
+    () => {
+      frame.contentWindow?.postMessage(
+        { type: "codex-visualization-initialize" },
+        "*",
+        [channel.port2],
+      );
+    },
+    { once: true },
+  );
+  // Match the trusted bootstrap element, not the same text in an authored title.
+  const frameHtml = srcdoc.replace(
+    '<script type="application/json" id="codex-visualization-widget-state">__CODEX_VISUALIZATION_WIDGET_STATE__<\/script>',
+    () =>
+      '<script type="application/json" id="codex-visualization-widget-state">' +
+      JSON.stringify(initialGlobals).replaceAll("<", "\\u003c") +
+      "<\/script>",
+  );
+  if (isShare && storage != null) {
+    // Fingerprint the rendered document, including restored widget state, without
+    // storing its content. This is a layout cache, not a security identity.
+    let hash = 5381;
+    for (let index = 0; index < frameHtml.length; index += 1) {
+      hash = (hash * 33 + frameHtml.charCodeAt(index)) % 4_294_967_296;
+    }
+    sizeFingerprint = hash.toString(36);
+    try {
+      const size = JSON.parse(storage.getItem(sizeStorageKey) ?? "null");
+      if (
+        size?.fingerprint === sizeFingerprint &&
+        size.width === frame.clientWidth &&
+        size.viewportHeight === globalThis.innerHeight &&
+        size.dark ===
+          globalThis.matchMedia("(prefers-color-scheme: dark)").matches &&
+        size.scale === globalThis.devicePixelRatio &&
+        typeof size.height === "number" &&
+        Number.isFinite(size.height) &&
+        size.height >= 0 &&
+        size.height <= 10_000
+      ) {
+        frame.style.height = size.height + "px";
+      }
+    } catch {
+      // Ignore missing or invalid cache entries and measure the live frame.
+    }
+  }
+  frame.srcdoc = frameHtml;
+  delete frame.dataset.srcdoc;
+})();
+</script>
+</body>
+</html>

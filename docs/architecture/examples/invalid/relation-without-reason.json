@@ -1,0 +1,36 @@
+{
+  "schema": "AgentRequest",
+  "reason": "新建关系必须带孩子填写的relation_reason。",
+  "payload": {
+    "schema_version": "1.0",
+    "operation": "tree.move",
+    "request_id": "example-tree-move",
+    "client": {
+      "type": "web",
+      "name": "contract-example",
+      "version": "1.0"
+    },
+    "subject": {
+      "profile_id": "contract_sample"
+    },
+    "input": {
+      "action": "link",
+      "method": "keyboard",
+      "card_id": "knowledge-card-F1",
+      "parent_id": "my-algebra-group",
+      "position": {
+        "x": 120,
+        "y": 80
+      },
+      "expected_revision": 0,
+      "target_card_id": "knowledge-card-F3"
+    },
+    "options": {
+      "language": "zh-CN",
+      "modalities": [
+        "text",
+        "svg"
+      ]
+    }
+  }
+}

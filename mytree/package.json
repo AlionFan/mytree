@@ -1,0 +1,1 @@
+{"name":"mytree-math-ui","private":true,"scripts":{"vendor":"node scripts/vendor_frontend.mjs"},"dependencies":{"dompurify":"^3.3.0","katex":"0.19.1","marked":"^17.0.0","mathlive":"0.111.4"}}

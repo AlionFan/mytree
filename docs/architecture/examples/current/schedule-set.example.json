@@ -1,0 +1,63 @@
+{
+  "provenance": {
+    "kind": "current_http_projection",
+    "source": "docs/architecture/examples/current/current-http-sources.json",
+    "operation_source": "schedule.set",
+    "description": "现场生成，脚本 tools/capture_agent_examples.py；未留存原始 HTTP 响应字节，已解析的 JSON 在 current-http-sources.json 的 response 字段保留。 目标信封与请求是独立协议样例，不是原始抓包。"
+  },
+  "request": {
+    "schema_version": "1.0",
+    "operation": "schedule.set",
+    "request_id": "example-schedule-set",
+    "client": {
+      "type": "web",
+      "name": "contract-example",
+      "version": "1.0"
+    },
+    "subject": {
+      "profile_id": "contract_sample"
+    },
+    "input": {
+      "availability": {
+        "days": [
+          2,
+          5
+        ],
+        "time": "18:15"
+      }
+    },
+    "options": {
+      "language": "zh-CN",
+      "modalities": [
+        "text",
+        "svg"
+      ]
+    }
+  },
+  "response": {
+    "schema_version": "1.0",
+    "operation": "schedule.set",
+    "request_id": "example-schedule-set",
+    "status": "ok",
+    "verification": {
+      "level": "verified",
+      "label": "程序核对的示例结果"
+    },
+    "effects": [
+      {
+        "kind": "update_profile",
+        "id": "contract_sample",
+        "idempotent_replay": false
+      }
+    ],
+    "output": {
+      "availability": {
+        "days": [
+          2,
+          5
+        ],
+        "time": "18:15"
+      }
+    }
+  }
+}

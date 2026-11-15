@@ -1,0 +1,64 @@
+{
+  "provenance": {
+    "kind": "runtime_http",
+    "source": "docs/architecture/examples/runtime/capture-f157d63a66b1.json",
+    "source_sha256": "f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c",
+    "trace_index": 16,
+    "capture_script": "tools/e2e_loop_check.py",
+    "scope": "真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量",
+    "request_image_restored_from": null
+  },
+  "request": {
+    "schema_version": "1.0",
+    "operation": "review.today",
+    "request_id": "loop-review-today-8",
+    "client": {
+      "type": "web",
+      "name": "isolated-e2e"
+    },
+    "subject": {
+      "profile_id": "e2e_loop_local"
+    },
+    "input": {},
+    "options": {
+      "language": "zh-CN",
+      "modalities": [
+        "text",
+        "svg"
+      ]
+    }
+  },
+  "response": {
+    "schema_version": "1.0",
+    "request_id": "loop-review-today-8",
+    "operation": "review.today",
+    "status": "ok",
+    "output": {
+      "date": "2026-11-14",
+      "timezone": "Asia/Shanghai",
+      "items": [
+        {
+          "id": "F2",
+          "knowledge_id": "F2",
+          "due_at": "2026-11-14T19:42:11+08:00",
+          "reason": "之前为平方差公式安排了复习，今天可以回来看看。",
+          "based_on": [
+            "d345f56ff21840378fe7e5e9185c10da"
+          ],
+          "task": {
+            "kind": "recall",
+            "prompt": "先不看解法，说说平方差公式适合什么样的两项式。"
+          }
+        }
+      ],
+      "reminder_allowed": true,
+      "reminder_key": "7eb120f323dffce9faf64139483167ac84217351",
+      "message": "今天有 1 个小任务：平方差公式的一个回忆问题。有空时可以从一项开始。"
+    },
+    "effects": [],
+    "verification": {
+      "level": "unavailable",
+      "label": "来自保存的复习安排"
+    }
+  }
+}

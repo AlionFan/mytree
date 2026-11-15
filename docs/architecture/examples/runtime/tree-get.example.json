@@ -1,0 +1,235 @@
+{
+  "provenance": {
+    "kind": "runtime_http",
+    "source": "docs/architecture/examples/runtime/capture-f157d63a66b1.json",
+    "source_sha256": "f157d63a66b1691f412ad87f587e09ea03dfed770b529705af40057734088a9c",
+    "trace_index": 40,
+    "capture_script": "tools/e2e_loop_check.py",
+    "scope": "真实本机HTTP；隔离档案；本地假模型；不代表真实OCR质量",
+    "request_image_restored_from": null
+  },
+  "request": {
+    "schema_version": "1.0",
+    "operation": "tree.get",
+    "request_id": "loop-tree-get-25",
+    "client": {
+      "type": "web",
+      "name": "isolated-e2e"
+    },
+    "subject": {
+      "profile_id": "e2e_loop_local"
+    },
+    "input": {},
+    "options": {
+      "language": "zh-CN",
+      "modalities": [
+        "text",
+        "svg"
+      ]
+    }
+  },
+  "response": {
+    "schema_version": "1.0",
+    "request_id": "loop-tree-get-25",
+    "operation": "tree.get",
+    "status": "ok",
+    "output": {
+      "revision": 0,
+      "skeleton": [
+        {
+          "id": "F1",
+          "name": "提公因式",
+          "pre": null
+        },
+        {
+          "id": "F2",
+          "name": "平方差公式",
+          "pre": "F1"
+        },
+        {
+          "id": "F3",
+          "name": "完全平方公式",
+          "pre": "F1"
+        },
+        {
+          "id": "F4",
+          "name": "分解要彻底",
+          "pre": "F2"
+        },
+        {
+          "id": "F5",
+          "name": "括号前的符号",
+          "pre": "F1"
+        },
+        {
+          "id": "R1",
+          "name": "约分只能约因式",
+          "pre": "F4"
+        },
+        {
+          "id": "R2",
+          "name": "约分要约到最简",
+          "pre": "R1"
+        },
+        {
+          "id": "R3",
+          "name": "分式里的符号",
+          "pre": "R1"
+        },
+        {
+          "id": "N1",
+          "name": "实数与数的运算",
+          "pre": null
+        },
+        {
+          "id": "N2",
+          "name": "二次根式",
+          "pre": "N1"
+        },
+        {
+          "id": "N3",
+          "name": "整式与幂的运算",
+          "pre": "N1"
+        },
+        {
+          "id": "N4",
+          "name": "科学计数法",
+          "pre": "N1"
+        },
+        {
+          "id": "E1",
+          "name": "一元一次方程",
+          "pre": "N3"
+        },
+        {
+          "id": "E2",
+          "name": "二元一次方程组",
+          "pre": "E1"
+        },
+        {
+          "id": "E3",
+          "name": "一元二次方程",
+          "pre": "F2"
+        },
+        {
+          "id": "E4",
+          "name": "分式方程",
+          "pre": "R1"
+        },
+        {
+          "id": "I1",
+          "name": "一元一次不等式",
+          "pre": "E1"
+        },
+        {
+          "id": "I2",
+          "name": "不等式组",
+          "pre": "I1"
+        },
+        {
+          "id": "U1",
+          "name": "平面直角坐标系",
+          "pre": null
+        },
+        {
+          "id": "U2",
+          "name": "一次函数",
+          "pre": "U1"
+        },
+        {
+          "id": "U3",
+          "name": "反比例函数",
+          "pre": "U1"
+        },
+        {
+          "id": "U4",
+          "name": "二次函数",
+          "pre": "E3"
+        },
+        {
+          "id": "U5",
+          "name": "函数与实际问题",
+          "pre": "U2"
+        },
+        {
+          "id": "G1",
+          "name": "相交线与平行线",
+          "pre": null
+        },
+        {
+          "id": "G2",
+          "name": "三角形与全等",
+          "pre": "G1"
+        },
+        {
+          "id": "G3",
+          "name": "勾股定理",
+          "pre": "G2"
+        },
+        {
+          "id": "G4",
+          "name": "四边形",
+          "pre": "G2"
+        },
+        {
+          "id": "G5",
+          "name": "相似三角形",
+          "pre": "G2"
+        },
+        {
+          "id": "G6",
+          "name": "圆",
+          "pre": "G2"
+        },
+        {
+          "id": "G7",
+          "name": "图形变换与视图",
+          "pre": "U1"
+        },
+        {
+          "id": "G8",
+          "name": "锐角三角函数",
+          "pre": "G3"
+        },
+        {
+          "id": "G9",
+          "name": "几何推理与证明",
+          "pre": "G2"
+        },
+        {
+          "id": "S1",
+          "name": "统计图表与数据收集",
+          "pre": null
+        },
+        {
+          "id": "S2",
+          "name": "平均数中位数众数",
+          "pre": "S1"
+        },
+        {
+          "id": "S3",
+          "name": "方差与数据波动",
+          "pre": "S2"
+        },
+        {
+          "id": "P1",
+          "name": "事件与概率",
+          "pre": null
+        },
+        {
+          "id": "P2",
+          "name": "列表与树状图概率",
+          "pre": "P1"
+        }
+      ],
+      "placements": [],
+      "groups": [],
+      "links": []
+    },
+    "effects": [],
+    "verification": {
+      "level": "unavailable",
+      "label": "本机参考目录与自己整理的知识卡"
+    }
+  }
+}

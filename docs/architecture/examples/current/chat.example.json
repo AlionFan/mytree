@@ -1,0 +1,70 @@
+{
+  "provenance": {
+    "kind": "current_http_projection",
+    "source": "docs/architecture/examples/current/current-http-sources.json",
+    "operation_source": "chat",
+    "description": "业务值来自已有HTTP响应；信封、reading_id、事实编号等是标注的目标契约元数据。请求是独立协议样例，不宣称是原始抓包。"
+  },
+  "request": {
+    "schema_version": "1.0",
+    "operation": "chat",
+    "request_id": "example-chat",
+    "client": {
+      "type": "web",
+      "name": "contract-example",
+      "version": "1.0"
+    },
+    "subject": {
+      "profile_id": "contract_sample"
+    },
+    "input": {
+      "diagnosis_id": "54cebef17a2d4c85804b495ec8482728",
+      "question": "这一步可以怎样理解？",
+      "level": 3
+    },
+    "options": {
+      "language": "zh-CN",
+      "modalities": [
+        "text",
+        "svg"
+      ]
+    }
+  },
+  "response": {
+    "schema_version": "1.0",
+    "operation": "chat",
+    "request_id": "example-chat",
+    "status": "ok",
+    "verification": {
+      "level": "ai_review",
+      "label": "自然语言辅导仍待核对，等式核验有范围"
+    },
+    "effects": [],
+    "output": {
+      "reply": "先看 $-1^{2024}$：没有括号时，先算乘方，所以它等于 $-(1^{2024})=-1$；若写成 $(-1)^{2024}$，才是 $1$。你看这两种写法的结果一样吗？",
+      "equations": [
+        {
+          "left": "-1^{2024}",
+          "right": "-1",
+          "latex": true
+        },
+        {
+          "left": "(-1)^{2024}",
+          "right": "1",
+          "latex": true
+        }
+      ],
+      "fallback": false,
+      "source": "model"
+    },
+    "meta": {
+      "model": "gpt-6.1-sol",
+      "seconds": 5.29,
+      "usage": {
+        "prompt_tokens": 4794,
+        "completion_tokens": 108,
+        "total_tokens": 4902
+      }
+    }
+  }
+}

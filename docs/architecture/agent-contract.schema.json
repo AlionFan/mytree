@@ -1,0 +1,6092 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:joybeat:mytree:agent-contract:1.0",
+  "title": "小树学习 Agent 统一调用契约",
+  "description": "按Claude ARCH-001、PRODUCT-001、PRODUCT-002的目标设计；23操作，当前HTTP服务未迁移。Schema验证形状与声明约束，服务端另验身份、证据真实性、去重和计分。",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/AgentRequest"
+    },
+    {
+      "$ref": "#/$defs/AgentResponse"
+    }
+  ],
+  "$defs": {
+    "Identifier": {
+      "type": "string",
+      "maxLength": 64,
+      "minLength": 1
+    },
+    "Verification": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "verified",
+            "ai_review",
+            "unavailable"
+          ]
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 240,
+          "minLength": 1
+        }
+      },
+      "required": [
+        "level",
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "ErrorCode": {
+      "type": "string",
+      "enum": [
+        "INVALID_INPUT",
+        "NEEDS_CONFIRMATION",
+        "UNSUPPORTED",
+        "MODEL_NOT_CONFIGURED",
+        "MODEL_TIMEOUT",
+        "MODEL_BUSY",
+        "ALLOWANCE_EXHAUSTED",
+        "MODEL_UPSTREAM",
+        "MODEL_OUTPUT_INVALID",
+        "MODEL_AUTH",
+        "NOT_FOUND",
+        "CONFLICT",
+        "STORAGE_FAILED"
+      ]
+    },
+    "AgentError": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/ErrorCode"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 500,
+          "minLength": 1
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "details_ref": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "current_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "发生版本冲突时返回当前版本，客户端可重新读取。"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "INVALID_INPUT",
+                  "NEEDS_CONFIRMATION",
+                  "UNSUPPORTED",
+                  "MODEL_NOT_CONFIGURED",
+                  "MODEL_AUTH",
+                  "NOT_FOUND",
+                  "CONFLICT"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "retryable": {
+                "const": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "current_revision"
+            ]
+          },
+          "then": {
+            "properties": {
+              "code": {
+                "const": "CONFLICT"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Effect": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "record_diagnosis",
+            "create_wrong_card",
+            "create_knowledge_card",
+            "edit_card",
+            "move_card",
+            "update_profile",
+            "create_review",
+            "create_practice",
+            "record_feedback",
+            "none",
+            "start_quiz",
+            "record_answer",
+            "unlock_card",
+            "update_growth"
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "idempotent_replay": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "idempotent_replay"
+      ],
+      "additionalProperties": false
+    },
+    "HarnessGate": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "enum": [
+            "H0",
+            "H1",
+            "H2",
+            "H3",
+            "H4",
+            "H5",
+            "H6",
+            "H7"
+          ]
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fallback",
+            "fail"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "id",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    "Harness": {
+      "type": "object",
+      "properties": {
+        "gates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/HarnessGate"
+          },
+          "maxItems": 8
+        }
+      },
+      "required": [
+        "gates"
+      ],
+      "additionalProperties": false
+    },
+    "Artifact": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "svg",
+            "latex",
+            "markdown",
+            "audio_ref"
+          ]
+        },
+        "role": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "ref": {
+          "type": "string",
+          "maxLength": 200000,
+          "minLength": 1
+        }
+      },
+      "required": [
+        "type",
+        "role",
+        "ref"
+      ],
+      "additionalProperties": false
+    },
+    "NextAction": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "$ref": "#/$defs/Operation"
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1
+        },
+        "requires": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "operation",
+        "label",
+        "requires"
+      ],
+      "additionalProperties": false
+    },
+    "Availability": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 7
+          },
+          "maxItems": 7,
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "time": {
+          "type": "string",
+          "maxLength": 5,
+          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+        }
+      },
+      "required": [
+        "days",
+        "time"
+      ],
+      "additionalProperties": false
+    },
+    "Step": {
+      "type": "object",
+      "properties": {
+        "i": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 1500
+        },
+        "ok": {
+          "enum": [
+            true,
+            false,
+            null,
+            "incomplete"
+          ]
+        },
+        "latex": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "i",
+        "text",
+        "ok"
+      ],
+      "additionalProperties": false
+    },
+    "RecognitionMeta": {
+      "type": "object",
+      "properties": {
+        "question_type": {
+          "type": "string",
+          "enum": [
+            "factor",
+            "simplify",
+            "calculate",
+            "equation",
+            "inequality",
+            "function",
+            "geometry",
+            "statistics",
+            "probability",
+            "word_problem",
+            "other"
+          ]
+        },
+        "topic_id": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "problem_latex": {
+          "type": "string",
+          "maxLength": 1200
+        },
+        "diagram_description": {
+          "type": "string",
+          "maxLength": 1800
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "inferred": {
+                "const": true
+              }
+            },
+            "required": [
+              "inferred"
+            ]
+          },
+          "then": {
+            "required": [
+              "alternatives"
+            ],
+            "properties": {
+              "alternatives": {
+                "minItems": 1,
+                "contains": {
+                  "properties": {
+                    "selected": {
+                      "const": true
+                    },
+                    "consistency": {
+                      "const": "match"
+                    }
+                  },
+                  "required": [
+                    "selected",
+                    "consistency"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "RecognitionAlternative": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "group": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecognitionEvidence"
+          },
+          "maxItems": 6
+        },
+        "consistency": {
+          "type": "string",
+          "enum": [
+            "match",
+            "conflict",
+            "unverified"
+          ]
+        },
+        "selected": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "group",
+        "line",
+        "text",
+        "evidence",
+        "consistency",
+        "selected"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "consistency": {
+                "const": "match"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "evidence": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "RecognizeInput": {
+      "type": "object",
+      "properties": {
+        "image_data": {
+          "type": "string",
+          "maxLength": 6100000,
+          "pattern": "^data:image/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$"
+        }
+      },
+      "required": [
+        "image_data"
+      ],
+      "additionalProperties": false
+    },
+    "RecognizeOutput": {
+      "type": "object",
+      "properties": {
+        "reading_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "problem": {
+          "type": "string",
+          "maxLength": 6000
+        },
+        "problem_latex": {
+          "type": "string",
+          "maxLength": 1200
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1500
+          },
+          "maxItems": 30
+        },
+        "question_type": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "topic_id": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "diagram_description": {
+          "type": "string",
+          "maxLength": 1800
+        },
+        "uncertain_lines": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "maxItems": 31
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1800
+          },
+          "maxItems": 16
+        },
+        "supported": {
+          "type": "boolean"
+        },
+        "multiple_questions": {
+          "type": "boolean"
+        },
+        "needs_confirmation": {
+          "const": true
+        },
+        "inferred": {
+          "type": "boolean"
+        },
+        "reading_evidence": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecognitionAlternative"
+          },
+          "maxItems": 90
+        }
+      },
+      "required": [
+        "reading_id",
+        "problem",
+        "steps",
+        "supported",
+        "multiple_questions",
+        "needs_confirmation"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "inferred": {
+                "const": true
+              }
+            },
+            "required": [
+              "inferred"
+            ]
+          },
+          "then": {
+            "required": [
+              "alternatives"
+            ],
+            "properties": {
+              "alternatives": {
+                "minItems": 1,
+                "contains": {
+                  "properties": {
+                    "selected": {
+                      "const": true
+                    },
+                    "consistency": {
+                      "const": "match"
+                    }
+                  },
+                  "required": [
+                    "selected",
+                    "consistency"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Analysis": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "problem": {
+          "type": "string",
+          "maxLength": 6000
+        },
+        "problem_latex": {
+          "type": "string",
+          "maxLength": 1200
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "maxItems": 30
+        },
+        "first_error": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cause": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 80
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/StudyStatus"
+        },
+        "hints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 10000
+          },
+          "maxItems": 3,
+          "minItems": 1
+        },
+        "card": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 3000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "target_latex": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 3000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "verification": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "knowledge_ids": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "maxItems": 10
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "domain": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "maxItems": 30
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "visual_svg": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 200000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {},
+        "prev": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 1500
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cur": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 1500
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "h3_leaks": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "maxItems": 3
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lesson_kp": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 64
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "question_type": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 64
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "engine": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 80
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "assessment": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 3000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "diagram_description": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 1800
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "prompt_version": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "hint_levels_available": {
+          "type": "integer",
+          "const": 3
+        },
+        "study_mode": {
+          "enum": [
+            "analysis",
+            "lesson_only"
+          ]
+        }
+      },
+      "required": [
+        "problem",
+        "status",
+        "steps"
+      ],
+      "additionalProperties": false
+    },
+    "WrongCard": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "type": {
+          "enum": [
+            "wrong",
+            "lesson"
+          ]
+        },
+        "problem": {
+          "type": "string",
+          "maxLength": 6000
+        },
+        "student_steps": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1500
+          },
+          "maxItems": 30
+        },
+        "knowledge_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "maxItems": 10
+        },
+        "diagnosis_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "verification": {
+          "$ref": "#/$defs/Verification"
+        },
+        "learner_note": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "study_status": {
+          "$ref": "#/$defs/StudyStatus"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "problem",
+        "student_steps",
+        "knowledge_ids",
+        "diagnosis_id",
+        "verification",
+        "revision",
+        "study_status"
+      ],
+      "additionalProperties": false
+    },
+    "KnowledgeCard": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "type": {
+          "const": "knowledge"
+        },
+        "knowledge_id": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1
+        },
+        "source_wrong_card_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "rule": {
+          "type": "string",
+          "maxLength": 6000,
+          "minLength": 1
+        },
+        "rule_source": {
+          "type": "string",
+          "maxLength": 1000,
+          "minLength": 1
+        },
+        "verification": {
+          "$ref": "#/$defs/Verification"
+        },
+        "learner_note": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "removed"
+          ]
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unlock_evidence": {
+          "$ref": "#/$defs/QualifiedUnlockEvidence"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "knowledge_id",
+        "title",
+        "source_wrong_card_ids",
+        "rule",
+        "rule_source",
+        "verification",
+        "status",
+        "revision",
+        "unlock_evidence"
+      ],
+      "additionalProperties": false
+    },
+    "StudyInput": {
+      "type": "object",
+      "properties": {
+        "confirmed_reading_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "problem": {
+          "type": "string",
+          "maxLength": 6000,
+          "minLength": 1
+        },
+        "problem_latex": {
+          "type": "string",
+          "maxLength": 1200
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1500,
+            "minLength": 1
+          },
+          "maxItems": 30
+        },
+        "recognition": {
+          "$ref": "#/$defs/RecognitionMeta"
+        }
+      },
+      "required": [
+        "confirmed_reading_id",
+        "problem",
+        "steps"
+      ],
+      "additionalProperties": false
+    },
+    "StudyOutput": {
+      "type": "object",
+      "properties": {
+        "analysis": {
+          "$ref": "#/$defs/Analysis"
+        },
+        "diagnosis_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "duplicate": {
+          "type": "boolean"
+        },
+        "wrong_card": {
+          "$ref": "#/$defs/WrongCard"
+        }
+      },
+      "required": [
+        "analysis",
+        "diagnosis_id"
+      ],
+      "additionalProperties": false
+    },
+    "ChatInput": {
+      "type": "object",
+      "properties": {
+        "diagnosis_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "question": {
+          "type": "string",
+          "maxLength": 500,
+          "minLength": 1
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": [
+                  "user",
+                  "assistant"
+                ]
+              },
+              "content": {
+                "type": "string",
+                "maxLength": 1600
+              }
+            },
+            "required": [
+              "role",
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 6
+        }
+      },
+      "required": [
+        "diagnosis_id",
+        "question",
+        "level"
+      ],
+      "additionalProperties": false
+    },
+    "ChatOutput": {
+      "type": "object",
+      "properties": {
+        "reply": {
+          "type": "string",
+          "maxLength": 6000,
+          "minLength": 1
+        },
+        "equations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "left": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "right": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "latex": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "left",
+              "right"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 2
+        },
+        "fallback": {
+          "type": "boolean"
+        },
+        "source": {
+          "type": "string",
+          "maxLength": 100
+        }
+      },
+      "required": [
+        "reply",
+        "equations",
+        "fallback",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "PracticeItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "q": {
+          "type": "string",
+          "maxLength": 6000
+        },
+        "question": {
+          "type": "string",
+          "maxLength": 6000
+        },
+        "question_md": {
+          "type": "string",
+          "maxLength": 6000
+        },
+        "q_latex": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "domain": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "maxItems": 20
+        },
+        "correct": {
+          "type": "boolean"
+        },
+        "grading": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "id",
+        "q",
+        "question",
+        "domain"
+      ],
+      "additionalProperties": false
+    },
+    "PracticeCreateInput": {
+      "type": "object",
+      "properties": {
+        "diagnosis_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "review_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "diagnosis_id"
+          ],
+          "not": {
+            "required": [
+              "review_id"
+            ]
+          }
+        },
+        {
+          "required": [
+            "review_id"
+          ],
+          "not": {
+            "required": [
+              "diagnosis_id"
+            ]
+          }
+        }
+      ]
+    },
+    "PracticeCreateOutput": {
+      "type": "object",
+      "properties": {
+        "kp": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PracticeItem"
+          },
+          "maxItems": 3,
+          "minItems": 1
+        }
+      },
+      "required": [
+        "kp",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "PracticeCheckInput": {
+      "type": "object",
+      "properties": {
+        "exercise_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "answer": {
+          "type": "string",
+          "maxLength": 480,
+          "minLength": 1
+        }
+      },
+      "required": [
+        "exercise_id",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "PracticeCheckOutput": {
+      "type": "object",
+      "properties": {
+        "correct": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 1000,
+          "minLength": 1
+        },
+        "duplicate": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "correct",
+        "message",
+        "duplicate"
+      ],
+      "additionalProperties": false
+    },
+    "ScheduleSetInput": {
+      "type": "object",
+      "properties": {
+        "availability": {
+          "$ref": "#/$defs/Availability"
+        }
+      },
+      "required": [
+        "availability"
+      ],
+      "additionalProperties": false
+    },
+    "ScheduleSetOutput": {
+      "type": "object",
+      "properties": {
+        "availability": {
+          "$ref": "#/$defs/Availability"
+        }
+      },
+      "required": [
+        "availability"
+      ],
+      "additionalProperties": false
+    },
+    "Fact": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "type": "string",
+          "maxLength": 80,
+          "minLength": 1
+        },
+        "knowledge_id": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "value": {},
+        "recorded_at": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "source_ref": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "value",
+        "source_ref"
+      ],
+      "additionalProperties": false
+    },
+    "Inference": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "statement": {
+          "type": "string",
+          "maxLength": 1000,
+          "minLength": 1
+        },
+        "based_on": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "confidence": {
+          "type": "object",
+          "properties": {
+            "level": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            },
+            "explanation": {
+              "type": "string",
+              "maxLength": 1000,
+              "minLength": 1
+            }
+          },
+          "required": [
+            "level",
+            "explanation"
+          ],
+          "additionalProperties": false
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disputed"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "statement",
+        "based_on",
+        "confidence",
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "Preferences": {
+      "type": "object",
+      "properties": {
+        "availability": {
+          "$ref": "#/$defs/Availability"
+        },
+        "goal": {
+          "type": "string",
+          "enum": [
+            "consolidate",
+            "explore",
+            "advance"
+          ]
+        },
+        "learner_goal": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "advance_opt_in": {
+          "type": "boolean"
+        },
+        "declined_knowledge_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "maxItems": 100
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "MasteryState": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "consolidating",
+        "stable"
+      ]
+    },
+    "StableEvidence": {
+      "type": "object",
+      "properties": {
+        "knowledge_id": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        },
+        "state": {
+          "const": "stable"
+        },
+        "based_on": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "maxItems": 100,
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "span_days": {
+          "type": "number",
+          "minimum": 3
+        },
+        "independent_correct_count": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "latest_without_hint": {
+          "const": true
+        }
+      },
+      "required": [
+        "knowledge_id",
+        "state",
+        "based_on",
+        "span_days",
+        "independent_correct_count",
+        "latest_without_hint"
+      ],
+      "additionalProperties": false
+    },
+    "Mastery": {
+      "type": "object",
+      "properties": {
+        "knowledge_id": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "state": {
+          "$ref": "#/$defs/MasteryState"
+        },
+        "based_on": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "maxItems": 100
+        },
+        "stable_evidence": {
+          "$ref": "#/$defs/StableEvidence"
+        }
+      },
+      "required": [
+        "knowledge_id",
+        "state",
+        "based_on"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "stable"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "stable_evidence"
+            ]
+          }
+        }
+      ]
+    },
+    "ProfileGetInput": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "ProfileGetOutput": {
+      "type": "object",
+      "properties": {
+        "facts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Fact"
+          },
+          "maxItems": 1000
+        },
+        "inferences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Inference"
+          },
+          "maxItems": 1000
+        },
+        "preferences": {
+          "$ref": "#/$defs/Preferences"
+        },
+        "mastery": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Mastery"
+          },
+          "maxItems": 1000
+        },
+        "legacy": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "facts",
+        "inferences",
+        "preferences"
+      ],
+      "additionalProperties": false
+    },
+    "FeedbackAddInput": {
+      "type": "object",
+      "properties": {
+        "diagnosis_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "rating": {
+          "type": "string",
+          "enum": [
+            "understood",
+            "confusing",
+            "incorrect"
+          ]
+        },
+        "issue": {
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "diagnosis_id",
+        "rating"
+      ],
+      "additionalProperties": false
+    },
+    "FeedbackAddOutput": {
+      "type": "object",
+      "properties": {
+        "recorded": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "feedback_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "recorded",
+        "message"
+      ],
+      "additionalProperties": false
+    },
+    "SpeechInput": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "asr",
+            "tts"
+          ]
+        },
+        "audio_data": {
+          "type": "string",
+          "maxLength": 6100000
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 6000,
+          "minLength": 1
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "asr"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "audio_data"
+            ],
+            "not": {
+              "required": [
+                "text"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "tts"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "text"
+            ],
+            "not": {
+              "required": [
+                "audio_data"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "SpeechOutput": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "maxLength": 6000
+        },
+        "audio_ref": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "text"
+          ]
+        },
+        {
+          "required": [
+            "audio_ref"
+          ]
+        }
+      ],
+      "description": "目标成功载荷；语音适配尚未配置，当前示例仅为真实错误。"
+    },
+    "ReviewTask": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "knowledge_id": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        },
+        "due_at": {
+          "type": "string",
+          "maxLength": 80,
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 1000,
+          "minLength": 1
+        },
+        "based_on": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "maxItems": 100,
+          "minItems": 1
+        },
+        "task": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "recall",
+                "exercise"
+              ]
+            },
+            "prompt": {
+              "type": "string",
+              "maxLength": 3000,
+              "minLength": 1
+            },
+            "exercise_id": {
+              "$ref": "#/$defs/Identifier"
+            }
+          },
+          "required": [
+            "kind",
+            "prompt"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "knowledge_id",
+        "due_at",
+        "reason",
+        "based_on",
+        "task"
+      ],
+      "additionalProperties": false
+    },
+    "ReviewTodayInput": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "ReviewTodayOutput": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "timezone": {
+          "const": "Asia/Shanghai"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ReviewTask"
+          },
+          "maxItems": 3
+        },
+        "reminder_allowed": {
+          "type": "boolean"
+        },
+        "reminder_key": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 800
+        }
+      },
+      "required": [
+        "date",
+        "timezone",
+        "items",
+        "reminder_allowed"
+      ],
+      "additionalProperties": false
+    },
+    "ReviewCompleteInput": {
+      "type": "object",
+      "properties": {
+        "review_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "maxItems": 100,
+          "minItems": 1
+        },
+        "self_report": {
+          "type": "string",
+          "enum": [
+            "remembered",
+            "partial",
+            "forgot"
+          ]
+        }
+      },
+      "required": [
+        "review_id",
+        "evidence_ids"
+      ],
+      "additionalProperties": false
+    },
+    "ReviewCompleteOutput": {
+      "type": "object",
+      "properties": {
+        "review_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "profile_fact_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "maxItems": 100,
+          "minItems": 1
+        },
+        "knowledge_card_eligible": {
+          "type": "boolean"
+        },
+        "knowledge_id": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "unlock_evidence": {
+          "$ref": "#/$defs/QualifiedUnlockEvidence"
+        }
+      },
+      "required": [
+        "review_id",
+        "completed",
+        "profile_fact_ids",
+        "knowledge_card_eligible",
+        "knowledge_id"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "knowledge_card_eligible": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "unlock_evidence"
+            ]
+          }
+        }
+      ]
+    },
+    "CardListInput": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "wrong",
+            "knowledge"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "removed"
+          ]
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "cursor": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "CardListOutput": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/WrongCard"
+              },
+              {
+                "$ref": "#/$defs/KnowledgeCard"
+              }
+            ]
+          },
+          "maxItems": 100
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "items",
+        "next_cursor"
+      ],
+      "additionalProperties": false
+    },
+    "CardEditInput": {
+      "type": "object",
+      "properties": {
+        "card_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1
+        },
+        "learner_note": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "removed"
+          ]
+        },
+        "expected_revision": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "card_id",
+        "expected_revision"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "title"
+          ]
+        },
+        {
+          "required": [
+            "learner_note"
+          ]
+        },
+        {
+          "required": [
+            "status"
+          ]
+        }
+      ]
+    },
+    "CardEditOutput": {
+      "type": "object",
+      "properties": {
+        "card": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/WrongCard"
+            },
+            {
+              "$ref": "#/$defs/KnowledgeCard"
+            }
+          ]
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "card",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "Position": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    },
+    "TreePlacement": {
+      "type": "object",
+      "properties": {
+        "card_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "position": {
+          "$ref": "#/$defs/Position"
+        }
+      },
+      "required": [
+        "card_id",
+        "parent_id",
+        "position"
+      ],
+      "additionalProperties": false
+    },
+    "TreeGetInput": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "TreeGetOutput": {
+      "type": "object",
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skeleton": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "pre": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "pre"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 1000
+        },
+        "placements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TreePlacement"
+          },
+          "maxItems": 10000
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/Identifier"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "id",
+              "title"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 1000
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "$ref": "#/$defs/Identifier"
+              },
+              "to": {
+                "$ref": "#/$defs/Identifier"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "relation_reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            },
+            "required": [
+              "from",
+              "to"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 10000
+        }
+      },
+      "required": [
+        "revision",
+        "skeleton",
+        "placements",
+        "groups",
+        "links"
+      ],
+      "additionalProperties": false
+    },
+    "TreeMoveInput": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "move",
+            "group",
+            "link",
+            "undo"
+          ]
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "drag",
+            "keyboard",
+            "menu"
+          ]
+        },
+        "card_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "position": {
+          "$ref": "#/$defs/Position"
+        },
+        "group_title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "target_card_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "undo_token": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "expected_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "relation_reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "action",
+        "method",
+        "expected_revision"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "undo"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "undo_token"
+            ]
+          },
+          "else": {
+            "required": [
+              "card_id"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "move"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "parent_id",
+              "position"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "link"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "target_card_id",
+              "relation_reason"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "group"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "group_title"
+            ]
+          }
+        }
+      ]
+    },
+    "TreeMoveOutput": {
+      "type": "object",
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "placement": {
+          "$ref": "#/$defs/TreePlacement"
+        },
+        "undo": {
+          "type": "object",
+          "properties": {
+            "token": {
+              "type": "string",
+              "maxLength": 1000,
+              "minLength": 1
+            },
+            "previous_revision": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "token",
+            "previous_revision"
+          ],
+          "additionalProperties": false
+        },
+        "relation_assessment": {
+          "$ref": "#/$defs/RelationAssessment"
+        }
+      },
+      "required": [
+        "revision",
+        "undo"
+      ],
+      "additionalProperties": false
+    },
+    "ProfileSetPreferenceInput": {
+      "type": "object",
+      "properties": {
+        "preferences": {
+          "$ref": "#/$defs/Preferences"
+        }
+      },
+      "required": [
+        "preferences"
+      ],
+      "additionalProperties": false
+    },
+    "ProfileSetPreferenceOutput": {
+      "type": "object",
+      "properties": {
+        "preferences": {
+          "$ref": "#/$defs/Preferences"
+        },
+        "saved": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "preferences",
+        "saved"
+      ],
+      "additionalProperties": false
+    },
+    "ProfileDisputeInput": {
+      "type": "object",
+      "properties": {
+        "inference_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "statement": {
+          "type": "string",
+          "maxLength": 1000,
+          "minLength": 1
+        }
+      },
+      "required": [
+        "inference_id",
+        "statement"
+      ],
+      "additionalProperties": false
+    },
+    "ProfileDisputeOutput": {
+      "type": "object",
+      "properties": {
+        "dispute_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "inference_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "status": {
+          "const": "disputed"
+        },
+        "recorded": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "dispute_id",
+        "inference_id",
+        "status",
+        "recorded"
+      ],
+      "additionalProperties": false
+    },
+    "Recommendation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "consolidate",
+            "transfer",
+            "advance"
+          ]
+        },
+        "knowledge_id": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 1500,
+          "minLength": 1
+        },
+        "based_on": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "maxItems": 100,
+          "minItems": 1
+        },
+        "verification": {
+          "$ref": "#/$defs/Verification"
+        },
+        "exercise_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "maxItems": 20
+        },
+        "prerequisite_stable_evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/StableEvidence"
+          },
+          "maxItems": 100,
+          "minItems": 1
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "knowledge_id",
+        "reason",
+        "based_on",
+        "verification"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "advance"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "prerequisite_stable_evidence"
+            ]
+          }
+        }
+      ]
+    },
+    "RecommendNextInput": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "RecommendNextOutput": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Recommendation"
+          },
+          "maxItems": 3
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "Operation": {
+      "type": "string",
+      "enum": [
+        "recognize",
+        "study",
+        "chat",
+        "practice.create",
+        "practice.check",
+        "schedule.set",
+        "profile.get",
+        "feedback.add",
+        "speech",
+        "review.today",
+        "review.complete",
+        "card.list",
+        "card.edit",
+        "tree.get",
+        "tree.move",
+        "profile.set_preference",
+        "profile.dispute",
+        "recommend.next",
+        "quiz.start",
+        "quiz.answer",
+        "card.unlock",
+        "growth.get",
+        "leaderboard.get"
+      ]
+    },
+    "AgentRequest": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "operation": {
+          "$ref": "#/$defs/Operation"
+        },
+        "request_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "client": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "web",
+                "android",
+                "esp32",
+                "tool",
+                "other"
+              ]
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "version": {
+              "type": "string",
+              "maxLength": 80
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        "subject": {
+          "type": "object",
+          "properties": {
+            "profile_id": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          },
+          "required": [
+            "profile_id"
+          ],
+          "additionalProperties": false
+        },
+        "input": {
+          "type": "object"
+        },
+        "options": {
+          "type": "object",
+          "properties": {
+            "language": {
+              "const": "zh-CN"
+            },
+            "modalities": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "image",
+                  "audio",
+                  "svg"
+                ]
+              },
+              "maxItems": 4,
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schema_version",
+        "operation",
+        "request_id",
+        "client",
+        "subject",
+        "input"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "recognize"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/RecognizeInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "study"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/StudyInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "chat"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/ChatInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "practice.create"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/PracticeCreateInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "practice.check"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/PracticeCheckInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "schedule.set"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/ScheduleSetInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "profile.get"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/ProfileGetInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "feedback.add"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/FeedbackAddInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "speech"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/SpeechInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "review.today"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/ReviewTodayInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "review.complete"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/ReviewCompleteInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "card.list"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/CardListInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "card.edit"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/CardEditInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "tree.get"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/TreeGetInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "tree.move"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/TreeMoveInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "profile.set_preference"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/ProfileSetPreferenceInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "profile.dispute"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/ProfileDisputeInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "recommend.next"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/RecommendNextInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "quiz.start"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/QuizStartInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "quiz.answer"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/QuizAnswerInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "card.unlock"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/CardUnlockInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "growth.get"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/GrowthGetInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "leaderboard.get"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/LeaderboardGetInput"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AgentResponse": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "request_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "operation": {
+          "$ref": "#/$defs/Operation"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "needs_confirmation",
+            "partial",
+            "error"
+          ]
+        },
+        "verification": {
+          "$ref": "#/$defs/Verification"
+        },
+        "output": {
+          "type": "object"
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Artifact"
+          },
+          "maxItems": 30
+        },
+        "next_actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NextAction"
+          },
+          "maxItems": 20
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Effect"
+          },
+          "maxItems": 100
+        },
+        "harness": {
+          "$ref": "#/$defs/Harness"
+        },
+        "error": {
+          "$ref": "#/$defs/AgentError"
+        },
+        "meta": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "seconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "usage": {
+              "type": "object"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schema_version",
+        "request_id",
+        "operation",
+        "status",
+        "verification",
+        "effects"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "ok"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "output"
+            ],
+            "not": {
+              "required": [
+                "error"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "needs_confirmation"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "output",
+              "next_actions"
+            ],
+            "properties": {
+              "effects": {
+                "maxItems": 0
+              },
+              "next_actions": {
+                "minItems": 1
+              }
+            },
+            "not": {
+              "required": [
+                "error"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "partial"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "output",
+              "harness"
+            ],
+            "properties": {
+              "harness": {
+                "properties": {
+                  "gates": {
+                    "minItems": 1,
+                    "contains": {
+                      "properties": {
+                        "result": {
+                          "enum": [
+                            "fallback",
+                            "fail"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "result"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "error"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "error"
+            ],
+            "properties": {
+              "effects": {
+                "maxItems": 0
+              }
+            },
+            "not": {
+              "required": [
+                "output"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "enum": [
+                  "recognize",
+                  "chat",
+                  "profile.get",
+                  "speech",
+                  "review.today",
+                  "card.list",
+                  "tree.get",
+                  "recommend.next",
+                  "growth.get",
+                  "leaderboard.get"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "effects": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "study"
+              },
+              "status": {
+                "const": "ok"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "required": [
+                  "wrong_card"
+                ]
+              },
+              "effects": {
+                "contains": {
+                  "properties": {
+                    "kind": {
+                      "const": "create_wrong_card"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                }
+              }
+            }
+          },
+          "description": "完整目标 study 生成错题卡；旧服务投影缺卡片对象时只能示为 partial。"
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "recognize"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/RecognizeOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "study"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/StudyOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "chat"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/ChatOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "practice.create"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/PracticeCreateOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "practice.check"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/PracticeCheckOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "schedule.set"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/ScheduleSetOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "profile.get"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/ProfileGetOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "feedback.add"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/FeedbackAddOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "speech"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/SpeechOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "review.today"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/ReviewTodayOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "review.complete"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/ReviewCompleteOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "card.list"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/CardListOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "card.edit"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/CardEditOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "tree.get"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/TreeGetOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "tree.move"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/TreeMoveOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "profile.set_preference"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/ProfileSetPreferenceOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "profile.dispute"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/ProfileDisputeOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "recommend.next"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/RecommendNextOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "quiz.start"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/QuizStartOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "quiz.answer"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/QuizAnswerOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "card.unlock"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/CardUnlockOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "growth.get"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/GrowthGetOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "leaderboard.get"
+              }
+            },
+            "not": {
+              "properties": {
+                "status": {
+                  "const": "error"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "$ref": "#/$defs/LeaderboardGetOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "card.unlock"
+              },
+              "output": {
+                "properties": {
+                  "unlocked": {
+                    "const": false
+                  }
+                },
+                "required": [
+                  "unlocked"
+                ]
+              }
+            },
+            "required": [
+              "output"
+            ]
+          },
+          "then": {
+            "properties": {
+              "effects": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "card.unlock"
+              },
+              "status": {
+                "const": "ok"
+              },
+              "output": {
+                "properties": {
+                  "unlocked": {
+                    "const": true
+                  },
+                  "reused_existing": {
+                    "const": false
+                  }
+                },
+                "required": [
+                  "unlocked",
+                  "reused_existing"
+                ]
+              }
+            },
+            "required": [
+              "output"
+            ]
+          },
+          "then": {
+            "properties": {
+              "effects": {
+                "allOf": [
+                  {
+                    "contains": {
+                      "properties": {
+                        "kind": {
+                          "const": "unlock_card"
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ]
+                    }
+                  },
+                  {
+                    "contains": {
+                      "properties": {
+                        "kind": {
+                          "const": "update_growth"
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "UnlockChecks": {
+      "type": "object",
+      "properties": {
+        "U1": {
+          "type": "boolean",
+          "description": "同一服务端检验组三题至少两题合格正确；题数是起点待数据。"
+        },
+        "U2": {
+          "type": "boolean",
+          "description": "合格正确题中至少一题为服务端标注的迁移题，不能只替换原题一个数字。"
+        },
+        "U3": {
+          "type": "boolean",
+          "description": "全组三题的核验等级都是verified。"
+        },
+        "U4": {
+          "type": "boolean",
+          "description": "合格正确题未使用第3级完整解法；需要服务端提示访问记录，当前待B阶段实现。"
+        },
+        "U5": {
+          "type": "boolean",
+          "description": "题目与作答来自服务端保存的检验组，客户端不能自报资格。"
+        }
+      },
+      "required": [
+        "U1",
+        "U2",
+        "U3",
+        "U4",
+        "U5"
+      ],
+      "additionalProperties": false
+    },
+    "QuizAnswerRecord": {
+      "type": "object",
+      "properties": {
+        "exercise_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "evidence_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "correct": {
+          "type": "boolean"
+        },
+        "is_transfer": {
+          "type": "boolean",
+          "description": "服务端题目标注；迁移不只是把原错题的一个数字替换。"
+        },
+        "max_hint_level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3,
+          "description": "服务端记录的本题最高提示级别；访问记录机制待B阶段实现，缺记录不能当作已验证未看完整解法。"
+        },
+        "verification": {
+          "$ref": "#/$defs/Verification"
+        }
+      },
+      "required": [
+        "exercise_id",
+        "evidence_id",
+        "correct",
+        "is_transfer",
+        "max_hint_level",
+        "verification"
+      ],
+      "additionalProperties": false
+    },
+    "UnlockEvidence": {
+      "type": "object",
+      "properties": {
+        "quiz_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "knowledge_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "source": {
+          "const": "server_record"
+        },
+        "checks": {
+          "$ref": "#/$defs/UnlockChecks"
+        },
+        "answers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QuizAnswerRecord"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "required": [
+        "quiz_id",
+        "knowledge_id",
+        "source",
+        "checks",
+        "answers"
+      ],
+      "additionalProperties": false
+    },
+    "QualifiedUnlockEvidence": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/UnlockEvidence"
+        },
+        {
+          "properties": {
+            "checks": {
+              "properties": {
+                "U1": {
+                  "const": true
+                },
+                "U2": {
+                  "const": true
+                },
+                "U3": {
+                  "const": true
+                },
+                "U4": {
+                  "const": true
+                },
+                "U5": {
+                  "const": true
+                }
+              }
+            },
+            "answers": {
+              "items": {
+                "properties": {
+                  "verification": {
+                    "properties": {
+                      "level": {
+                        "const": "verified"
+                      }
+                    }
+                  }
+                }
+              },
+              "allOf": [
+                {
+                  "contains": {
+                    "type": "object",
+                    "properties": {
+                      "correct": {
+                        "const": true
+                      },
+                      "max_hint_level": {
+                        "maximum": 2
+                      },
+                      "verification": {
+                        "properties": {
+                          "level": {
+                            "const": "verified"
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "correct",
+                      "max_hint_level",
+                      "verification"
+                    ]
+                  },
+                  "minContains": 2
+                },
+                {
+                  "contains": {
+                    "type": "object",
+                    "properties": {
+                      "correct": {
+                        "const": true
+                      },
+                      "max_hint_level": {
+                        "maximum": 2
+                      },
+                      "verification": {
+                        "properties": {
+                          "level": {
+                            "const": "verified"
+                          }
+                        }
+                      },
+                      "is_transfer": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "correct",
+                      "max_hint_level",
+                      "verification",
+                      "is_transfer"
+                    ]
+                  },
+                  "minContains": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "description": "U1~U5全通过：3题均verified，至少2题正确且未用完整解法，其中至少1题为迁移；证据真实性和去重由服务端验证。"
+    },
+    "QuizItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 6000
+        },
+        "difficulty_level": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "difficulty_features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "is_transfer": {
+          "type": "boolean"
+        },
+        "verification": {
+          "$ref": "#/$defs/Verification"
+        },
+        "answer_kind": {
+          "type": "string",
+          "enum": [
+            "math",
+            "choice"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "prompt",
+        "difficulty_level",
+        "difficulty_features",
+        "is_transfer",
+        "verification"
+      ],
+      "additionalProperties": false
+    },
+    "QuizStartInput": {
+      "type": "object",
+      "properties": {
+        "knowledge_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "source_wrong_card_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "minItems": 1,
+          "maxItems": 100,
+          "uniqueItems": true
+        },
+        "review_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "knowledge_id",
+        "source_wrong_card_ids"
+      ],
+      "additionalProperties": false
+    },
+    "QuizStartOutput": {
+      "type": "object",
+      "properties": {
+        "quiz_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "knowledge_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QuizItem"
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "contains": {
+            "properties": {
+              "is_transfer": {
+                "const": true
+              }
+            },
+            "required": [
+              "is_transfer"
+            ]
+          }
+        }
+      },
+      "required": [
+        "quiz_id",
+        "knowledge_id",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "QuizAnswerInput": {
+      "type": "object",
+      "properties": {
+        "quiz_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "exercise_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "answer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 480
+        }
+      },
+      "required": [
+        "quiz_id",
+        "exercise_id",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "QuizAnswerOutput": {
+      "type": "object",
+      "properties": {
+        "quiz_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "exercise_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "correct": {
+          "type": "boolean"
+        },
+        "max_hint_level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3,
+          "description": "服务端记录的本题最高提示级别；访问记录机制待B阶段实现，缺记录不能当作已验证未看完整解法。"
+        },
+        "verification": {
+          "$ref": "#/$defs/Verification"
+        },
+        "evidence_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "duplicate": {
+          "type": "boolean"
+        },
+        "progress": {
+          "type": "object",
+          "properties": {
+            "answered_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3
+            },
+            "correct_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3
+            },
+            "complete": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "answered_count",
+            "correct_count",
+            "complete"
+          ],
+          "additionalProperties": false
+        },
+        "next_step": {
+          "type": "string",
+          "enum": [
+            "continue",
+            "up",
+            "hold",
+            "down_with_scaffold",
+            "stop_and_explain"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "quiz_id",
+        "exercise_id",
+        "correct",
+        "max_hint_level",
+        "verification",
+        "evidence_id",
+        "duplicate",
+        "progress",
+        "next_step",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "CardUnlockInput": {
+      "type": "object",
+      "properties": {
+        "quiz_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "quiz_id"
+      ],
+      "additionalProperties": false
+    },
+    "CardUnlockOutput": {
+      "type": "object",
+      "properties": {
+        "knowledge_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "unlocked": {
+          "type": "boolean"
+        },
+        "reused_existing": {
+          "type": "boolean"
+        },
+        "checks": {
+          "$ref": "#/$defs/UnlockChecks"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "maxItems": 5
+        },
+        "card": {
+          "$ref": "#/$defs/KnowledgeCard"
+        },
+        "evidence": {
+          "$ref": "#/$defs/UnlockEvidence"
+        }
+      },
+      "required": [
+        "knowledge_id",
+        "unlocked",
+        "reused_existing",
+        "checks",
+        "reasons"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "unlocked": {
+                "const": true
+              }
+            },
+            "required": [
+              "unlocked"
+            ]
+          },
+          "then": {
+            "required": [
+              "card",
+              "evidence"
+            ],
+            "properties": {
+              "checks": {
+                "properties": {
+                  "U1": {
+                    "const": true
+                  },
+                  "U2": {
+                    "const": true
+                  },
+                  "U3": {
+                    "const": true
+                  },
+                  "U4": {
+                    "const": true
+                  },
+                  "U5": {
+                    "const": true
+                  }
+                }
+              },
+              "evidence": {
+                "$ref": "#/$defs/QualifiedUnlockEvidence"
+              },
+              "reasons": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "unlocked": {
+                "const": false
+              }
+            },
+            "required": [
+              "unlocked"
+            ]
+          },
+          "then": {
+            "properties": {
+              "reasons": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "GrowthComponents": {
+      "type": "object",
+      "properties": {
+        "scale": {
+          "type": "integer",
+          "minimum": 0,
+          "multipleOf": 10
+        },
+        "lushness": {
+          "type": "integer",
+          "minimum": 0,
+          "multipleOf": 3
+        },
+        "relations": {
+          "type": "integer",
+          "minimum": 0,
+          "multipleOf": 2,
+          "maximum": 40
+        }
+      },
+      "required": [
+        "scale",
+        "lushness",
+        "relations"
+      ],
+      "additionalProperties": false
+    },
+    "GrowthPeriod": {
+      "type": "object",
+      "properties": {
+        "week_start": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "week_end": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "timezone": {
+          "const": "Asia/Shanghai"
+        }
+      },
+      "required": [
+        "week_start",
+        "week_end",
+        "timezone"
+      ],
+      "additionalProperties": false
+    },
+    "GrowthGetInput": {
+      "type": "object",
+      "properties": {
+        "week_start": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "GrowthGetOutput": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "components": {
+          "$ref": "#/$defs/GrowthComponents"
+        },
+        "evidence": {
+          "type": "object",
+          "properties": {
+            "scale": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Identifier"
+              },
+              "maxItems": 10000,
+              "uniqueItems": true
+            },
+            "lushness": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Identifier"
+              },
+              "maxItems": 10000,
+              "uniqueItems": true
+            },
+            "relations": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Identifier"
+              },
+              "maxItems": 10000,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "scale",
+            "lushness",
+            "relations"
+          ],
+          "additionalProperties": false
+        },
+        "period": {
+          "$ref": "#/$defs/GrowthPeriod"
+        },
+        "weekly_delta": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "score_rule": {
+          "const": "growth-v1-provisional"
+        }
+      },
+      "required": [
+        "total",
+        "components",
+        "evidence",
+        "period",
+        "weekly_delta",
+        "score_rule"
+      ],
+      "additionalProperties": false
+    },
+    "LeaderboardEntry": {
+      "type": "object",
+      "properties": {
+        "rank": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "nickname": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "growth_delta": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "components": {
+          "$ref": "#/$defs/GrowthComponents"
+        },
+        "tree_thumbnail_ref": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "rank",
+        "nickname",
+        "growth_delta",
+        "total",
+        "components",
+        "tree_thumbnail_ref"
+      ],
+      "additionalProperties": false
+    },
+    "LeaderboardGetInput": {
+      "type": "object",
+      "properties": {
+        "group_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "week_start": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        }
+      },
+      "required": [
+        "group_id"
+      ],
+      "additionalProperties": false
+    },
+    "LeaderboardGetOutput": {
+      "type": "object",
+      "properties": {
+        "group_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "period": {
+          "$ref": "#/$defs/GrowthPeriod"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LeaderboardEntry"
+          },
+          "maxItems": 100
+        },
+        "self_entry": {
+          "$ref": "#/$defs/LeaderboardEntry"
+        }
+      },
+      "required": [
+        "group_id",
+        "period",
+        "entries"
+      ],
+      "additionalProperties": false
+    },
+    "RelationAssessment": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "reference_match",
+            "learner_link",
+            "contradiction"
+          ]
+        },
+        "awarded_points": {
+          "type": "integer",
+          "minimum": 0,
+          "enum": [
+            0,
+            2
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "status",
+        "awarded_points",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "learner_link",
+                  "contradiction"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "awarded_points": {
+                "const": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "HintRequest": {
+      "type": "object",
+      "properties": {
+        "student": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "diagnosis_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "quiz_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "exercise_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "diagnosis_id",
+        "level"
+      ],
+      "additionalProperties": false,
+      "dependentRequired": {
+        "quiz_id": [
+          "exercise_id"
+        ],
+        "exercise_id": [
+          "quiz_id"
+        ]
+      }
+    },
+    "HintResponse": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 10000
+        },
+        "max_hint_level_recorded": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "diagnosis",
+            "quiz_exercise"
+          ]
+        }
+      },
+      "required": [
+        "level",
+        "text",
+        "max_hint_level_recorded",
+        "scope"
+      ],
+      "additionalProperties": false
+    },
+    "ReviewAckRequest": {
+      "type": "object",
+      "properties": {
+        "student": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "reminder_key": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "reminder_key"
+      ],
+      "additionalProperties": false
+    },
+    "ReviewAckResponse": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "reminder_key": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "duplicate": {
+          "type": "boolean"
+        },
+        "reminder_allowed": {
+          "const": false
+        }
+      },
+      "required": [
+        "ok",
+        "reminder_key"
+      ],
+      "additionalProperties": false
+    },
+    "ReviewSnoozeRequest": {
+      "type": "object",
+      "properties": {
+        "student": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "reminder_key": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "reminder_key"
+      ],
+      "additionalProperties": false
+    },
+    "ReviewSnoozeResponse": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "reminder_key": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "duplicate": {
+          "type": "boolean"
+        },
+        "reminder_allowed": {
+          "const": false
+        }
+      },
+      "required": [
+        "ok",
+        "reminder_key"
+      ],
+      "additionalProperties": false
+    },
+    "RecognitionEvidence": {
+      "type": "object",
+      "properties": {
+        "line": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "integer_list",
+            "repeat",
+            "previous"
+          ]
+        }
+      },
+      "required": [
+        "line",
+        "quote",
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "StudyStatus": {
+      "type": "string",
+      "enum": [
+        "not_attempted",
+        "correct",
+        "wrong_step",
+        "incomplete",
+        "ai_review",
+        "unreadable"
+      ]
+    },
+    "QuizLessonQuery": {
+      "type": "object",
+      "properties": {
+        "student": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "source_wrong_card_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "knowledge_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "source_wrong_card_id",
+        "knowledge_id"
+      ],
+      "additionalProperties": false,
+      "description": "只读辅助GET查询。student缺省沿本机demo兼容；未知/重复查询参数应拒绝。"
+    },
+    "QuizLessonOutput": {
+      "type": "object",
+      "properties": {
+        "source_wrong_card_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "knowledge_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 6000
+        },
+        "tip": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "problem": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 6000
+        },
+        "student_steps": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1500
+          },
+          "maxItems": 30
+        },
+        "paused": {
+          "type": "boolean"
+        },
+        "resume_on": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 10,
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "verification": {
+          "$ref": "#/$defs/Verification"
+        }
+      },
+      "required": [
+        "source_wrong_card_id",
+        "knowledge_id",
+        "title",
+        "rule",
+        "tip",
+        "problem",
+        "student_steps",
+        "paused",
+        "resume_on",
+        "verification"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "paused": {
+                "const": true
+              }
+            },
+            "required": [
+              "paused"
+            ]
+          },
+          "then": {
+            "properties": {
+              "resume_on": {
+                "type": "string",
+                "maxLength": 10,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "format": "date"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "resume_on": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ],
+      "description": "只返回本档案拥有且知识点匹配的来源卡与已有参考规则；paused/resume_on按服务端北京时间计算。读取不写盘、不调用模型，不含检验答案或H3提示。"
+    },
+    "QuizLessonError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "INVALID_INPUT",
+            "NOT_FOUND",
+            "STORAGE_FAILED"
+          ]
+        }
+      },
+      "required": [
+        "error",
+        "code"
+      ],
+      "additionalProperties": false,
+      "description": "辅助路由错误：400 INVALID_INPUT为查询不合法/知识点不匹配；404 NOT_FOUND为当前档案无该卡；503 STORAGE_FAILED为读取失败。固定安全消息，不含内部路径、凭据或其他档案详情。"
+    },
+    "PageRegion": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    "PageFragment": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "enum": [
+            "problem",
+            "student_work",
+            "teacher_annotation",
+            "crossed_out",
+            "unknown"
+          ]
+        },
+        "script_kind": {
+          "enum": [
+            "printed",
+            "handwritten",
+            "unknown"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "region": {
+          "$ref": "#/$defs/PageRegion"
+        }
+      },
+      "required": [
+        "role",
+        "script_kind",
+        "text",
+        "region"
+      ],
+      "additionalProperties": false
+    },
+    "UnassignedFragment": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "enum": [
+            "problem",
+            "student_work",
+            "teacher_annotation",
+            "crossed_out",
+            "unknown"
+          ]
+        },
+        "script_kind": {
+          "enum": [
+            "printed",
+            "handwritten",
+            "unknown"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "region": {
+          "$ref": "#/$defs/PageRegion"
+        },
+        "affected_orders": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          }
+        }
+      },
+      "required": [
+        "role",
+        "script_kind",
+        "text",
+        "region",
+        "affected_orders"
+      ],
+      "additionalProperties": false
+    },
+    "PageQuestion": {
+      "type": "object",
+      "properties": {
+        "reading_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "problem": {
+          "type": "string",
+          "maxLength": 6000
+        },
+        "problem_latex": {
+          "type": "string",
+          "maxLength": 1200
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1500
+          },
+          "maxItems": 30
+        },
+        "question_type": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "topic_id": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "diagram_description": {
+          "type": "string",
+          "maxLength": 1800
+        },
+        "uncertain_lines": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "maxItems": 31
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1800
+          },
+          "maxItems": 16
+        },
+        "supported": {
+          "type": "boolean"
+        },
+        "multiple_questions": {
+          "type": "boolean"
+        },
+        "needs_confirmation": {
+          "const": false
+        },
+        "inferred": {
+          "type": "boolean"
+        },
+        "reading_evidence": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecognitionAlternative"
+          },
+          "maxItems": 90
+        },
+        "item_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "printed_number": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "parent_item_id": {
+          "type": "null"
+        },
+        "region": {
+          "$ref": "#/$defs/PageRegion"
+        },
+        "auto_ready": {
+          "type": "boolean"
+        },
+        "readiness": {
+          "enum": [
+            "ready",
+            "needs_attention",
+            "unsupported",
+            "lesson_only"
+          ]
+        },
+        "attention_reasons": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "fragments": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/PageFragment"
+          }
+        },
+        "association_status": {
+          "enum": [
+            "clear",
+            "uncertain"
+          ]
+        },
+        "answer_presence": {
+          "enum": [
+            "present",
+            "absent",
+            "uncertain"
+          ]
+        },
+        "problem_complete": {
+          "type": "boolean"
+        },
+        "diagram_complete": {
+          "type": "boolean"
+        },
+        "association_evidence": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "source_kind": {
+              "const": "photo"
+            },
+            "page_index": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "transcription_version": {
+              "const": 1
+            }
+          },
+          "required": [
+            "source_kind",
+            "page_index",
+            "transcription_version"
+          ],
+          "additionalProperties": false
+        },
+        "lesson_ready": {
+          "type": "boolean"
+        },
+        "visual_required": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "reading_id",
+        "problem",
+        "problem_latex",
+        "steps",
+        "question_type",
+        "topic_id",
+        "diagram_description",
+        "uncertain_lines",
+        "warnings",
+        "supported",
+        "multiple_questions",
+        "needs_confirmation",
+        "inferred",
+        "reading_evidence",
+        "alternatives",
+        "item_id",
+        "order",
+        "printed_number",
+        "parent_item_id",
+        "region",
+        "auto_ready",
+        "readiness",
+        "attention_reasons",
+        "fragments",
+        "association_status",
+        "answer_presence",
+        "problem_complete",
+        "diagram_complete",
+        "association_evidence",
+        "provenance"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "readiness": {
+                "const": "ready"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "auto_ready": {
+                "const": true
+              },
+              "supported": {
+                "const": true
+              },
+              "problem_complete": {
+                "const": true
+              },
+              "diagram_complete": {
+                "const": true
+              },
+              "association_status": {
+                "const": "clear"
+              },
+              "answer_presence": {
+                "enum": [
+                  "present",
+                  "absent"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "auto_ready": {
+                "const": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    "PageRecognitionInput": {
+      "type": "object",
+      "properties": {
+        "image_data": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 6000000
+        },
+        "request_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "client_generation": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "page_index": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "student": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "image_data",
+        "request_id",
+        "client_generation"
+      ],
+      "additionalProperties": false
+    },
+    "PageRecognitionOutput": {
+      "type": "object",
+      "properties": {
+        "batch_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "source_revision": {
+          "const": 1
+        },
+        "client_generation": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "page_index": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/PageQuestion"
+          }
+        },
+        "unassigned_fragments": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/UnassignedFragment"
+          }
+        },
+        "overflow": {
+          "type": "boolean"
+        },
+        "warnings": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "original_search": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "enum": [
+                "not_configured",
+                "configured",
+                "unavailable"
+              ]
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "batch_id",
+        "source_revision",
+        "client_generation",
+        "page_index",
+        "items",
+        "unassigned_fragments",
+        "overflow",
+        "warnings",
+        "original_search"
+      ],
+      "additionalProperties": false
+    },
+    "ReadingStudyInput": {
+      "type": "object",
+      "properties": {
+        "batch_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "reading_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "source_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "request_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "student": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "batch_id",
+        "reading_id",
+        "source_revision",
+        "request_id"
+      ],
+      "additionalProperties": false
+    },
+    "PageCancelInput": {
+      "type": "object",
+      "properties": {
+        "batch_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "source_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "student": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "batch_id",
+        "source_revision"
+      ],
+      "additionalProperties": false
+    },
+    "QuestionSearchInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "batch_id",
+        "reading_id",
+        "source_revision",
+        "request_id"
+      ],
+      "properties": {
+        "batch_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+        },
+        "reading_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+        },
+        "source_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "student": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+        }
+      }
+    },
+    "QuestionBankContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "images": {
+          "type": "array",
+          "maxItems": 0,
+          "items": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "has_images": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "text",
+        "images",
+        "has_images"
+      ]
+    },
+    "QuestionBankCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "type": "string",
+          "maxLength": 24
+        },
+        "provider_item_id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "provider": {
+          "const": "youdao"
+        },
+        "provider_name": {
+          "const": "有道精品题库"
+        },
+        "source_url": {
+          "type": "null"
+        },
+        "content": {
+          "$ref": "#/$defs/QuestionBankContent"
+        },
+        "comparison": {
+          "enum": [
+            "text_equal",
+            "different",
+            "incomplete_or_unchecked"
+          ]
+        },
+        "verified": {
+          "const": false
+        }
+      },
+      "required": [
+        "candidate_id",
+        "provider_item_id",
+        "provider",
+        "provider_name",
+        "source_url",
+        "content",
+        "comparison",
+        "verified"
+      ]
+    },
+    "QuestionSearchOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "const": "youdao"
+        },
+        "status": {
+          "enum": [
+            "not_configured",
+            "unsupported",
+            "candidates",
+            "no_results"
+          ]
+        },
+        "candidates": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/QuestionBankCandidate"
+          }
+        },
+        "cached": {
+          "type": "boolean"
+        },
+        "reading_id": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "source_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "batch_id": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "reading_id": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "source_revision": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "batch_id",
+            "reading_id",
+            "source_revision"
+          ]
+        },
+        "query_id": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "queried_at": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "provider",
+        "status",
+        "candidates",
+        "cached",
+        "reading_id",
+        "source_revision",
+        "source",
+        "query_id",
+        "queried_at",
+        "message"
+      ]
+    },
+    "PageResumeInput": {
+      "type": "object",
+      "properties": {
+        "batch_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "source_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "student": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "image_data": {
+          "type": "string",
+          "maxLength": 6000000,
+          "pattern": "^data:image/(jpeg|png|webp);base64,"
+        }
+      },
+      "required": [
+        "batch_id",
+        "source_revision"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "x-operations": [
+    {
+      "name": "recognize",
+      "input": "RecognizeInput",
+      "output": "RecognizeOutput",
+      "writes": false,
+      "implementation": "existing-foundation"
+    },
+    {
+      "name": "study",
+      "input": "StudyInput",
+      "output": "StudyOutput",
+      "writes": true,
+      "implementation": "existing-foundation"
+    },
+    {
+      "name": "chat",
+      "input": "ChatInput",
+      "output": "ChatOutput",
+      "writes": false,
+      "implementation": "existing-foundation"
+    },
+    {
+      "name": "practice.create",
+      "input": "PracticeCreateInput",
+      "output": "PracticeCreateOutput",
+      "writes": true,
+      "implementation": "existing-foundation"
+    },
+    {
+      "name": "practice.check",
+      "input": "PracticeCheckInput",
+      "output": "PracticeCheckOutput",
+      "writes": true,
+      "implementation": "existing-foundation"
+    },
+    {
+      "name": "schedule.set",
+      "input": "ScheduleSetInput",
+      "output": "ScheduleSetOutput",
+      "writes": true,
+      "implementation": "existing-foundation"
+    },
+    {
+      "name": "profile.get",
+      "input": "ProfileGetInput",
+      "output": "ProfileGetOutput",
+      "writes": false,
+      "implementation": "existing-foundation"
+    },
+    {
+      "name": "feedback.add",
+      "input": "FeedbackAddInput",
+      "output": "FeedbackAddOutput",
+      "writes": true,
+      "implementation": "existing-foundation"
+    },
+    {
+      "name": "speech",
+      "input": "SpeechInput",
+      "output": "SpeechOutput",
+      "writes": false,
+      "implementation": "existing-foundation"
+    },
+    {
+      "name": "review.today",
+      "input": "ReviewTodayInput",
+      "output": "ReviewTodayOutput",
+      "writes": false,
+      "implementation": "planned"
+    },
+    {
+      "name": "review.complete",
+      "input": "ReviewCompleteInput",
+      "output": "ReviewCompleteOutput",
+      "writes": true,
+      "implementation": "planned"
+    },
+    {
+      "name": "card.list",
+      "input": "CardListInput",
+      "output": "CardListOutput",
+      "writes": false,
+      "implementation": "planned"
+    },
+    {
+      "name": "card.edit",
+      "input": "CardEditInput",
+      "output": "CardEditOutput",
+      "writes": true,
+      "implementation": "planned"
+    },
+    {
+      "name": "tree.get",
+      "input": "TreeGetInput",
+      "output": "TreeGetOutput",
+      "writes": false,
+      "implementation": "planned"
+    },
+    {
+      "name": "tree.move",
+      "input": "TreeMoveInput",
+      "output": "TreeMoveOutput",
+      "writes": true,
+      "implementation": "planned"
+    },
+    {
+      "name": "profile.set_preference",
+      "input": "ProfileSetPreferenceInput",
+      "output": "ProfileSetPreferenceOutput",
+      "writes": true,
+      "implementation": "planned"
+    },
+    {
+      "name": "profile.dispute",
+      "input": "ProfileDisputeInput",
+      "output": "ProfileDisputeOutput",
+      "writes": true,
+      "implementation": "planned"
+    },
+    {
+      "name": "recommend.next",
+      "input": "RecommendNextInput",
+      "output": "RecommendNextOutput",
+      "writes": false,
+      "implementation": "planned"
+    },
+    {
+      "name": "quiz.start",
+      "input": "QuizStartInput",
+      "output": "QuizStartOutput",
+      "writes": true,
+      "implementation": "planned"
+    },
+    {
+      "name": "quiz.answer",
+      "input": "QuizAnswerInput",
+      "output": "QuizAnswerOutput",
+      "writes": true,
+      "implementation": "planned"
+    },
+    {
+      "name": "card.unlock",
+      "input": "CardUnlockInput",
+      "output": "CardUnlockOutput",
+      "writes": true,
+      "implementation": "planned"
+    },
+    {
+      "name": "growth.get",
+      "input": "GrowthGetInput",
+      "output": "GrowthGetOutput",
+      "writes": false,
+      "implementation": "planned"
+    },
+    {
+      "name": "leaderboard.get",
+      "input": "LeaderboardGetInput",
+      "output": "LeaderboardGetOutput",
+      "writes": false,
+      "implementation": "planned"
+    }
+  ],
+  "x-decision-sources": [
+    "docs/collaboration/ARCH-001.md",
+    "docs/collaboration/PRODUCT-001.md",
+    "docs/collaboration/PRODUCT-002.md",
+    "docs/collaboration/B-DECISIONS.md"
+  ],
+  "x-provisional-parameters": {
+    "stable_min_interval_days": 3,
+    "stable_independent_correct_count": 2,
+    "advance_max_topics_per_week": 1,
+    "review_daily_max_items": 3,
+    "quiz_group_size": 3,
+    "unlock_min_correct": 2,
+    "unlock_min_correct_transfer": 1,
+    "difficulty_target_correct_rate": [
+      0.6,
+      0.8
+    ],
+    "scale_points_per_card": 10,
+    "lushness_points_per_review": 3,
+    "lushness_min_interval_days": 3,
+    "lushness_max_reviews_per_knowledge": 3,
+    "relation_points": 2,
+    "relation_scored_limit": 20
+  },
+  "x-runtime-obligations": [
+    "按真实服务端检验记录校验U1～U5、题目归属与知识点关联",
+    "提示访问须先有服务端记录；目前尚未实现，不能把客户端自报或缺记录当作U4通过",
+    "规模按knowledge_id、关联按有方向的知识点对去重；布局删除不减少历史分，重建不重复授分",
+    "成长分类之和、间隔与上限由服务端另验；Schema不能证明事实存在、授权或数学真值"
+  ],
+  "x-http-adapter-routes": [
+    {
+      "method": "POST",
+      "path": "/api/agent",
+      "request": "AgentRequest",
+      "response": "AgentResponse"
+    },
+    {
+      "method": "GET",
+      "path": "/api/review/today",
+      "response": "ReviewTodayOutput"
+    },
+    {
+      "method": "POST",
+      "path": "/api/hint",
+      "request": "HintRequest",
+      "response": "HintResponse"
+    },
+    {
+      "method": "POST",
+      "path": "/api/review/ack",
+      "request": "ReviewAckRequest",
+      "response": "ReviewAckResponse"
+    },
+    {
+      "method": "POST",
+      "path": "/api/review/snooze",
+      "request": "ReviewSnoozeRequest",
+      "response": "ReviewSnoozeResponse"
+    },
+    {
+      "method": "GET",
+      "path": "/api/quiz/lesson",
+      "query": "QuizLessonQuery",
+      "response": "QuizLessonOutput",
+      "error_responses": {
+        "400": "QuizLessonError",
+        "404": "QuizLessonError",
+        "503": "QuizLessonError"
+      },
+      "read_only": true
+    }
+  ]
+}

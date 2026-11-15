@@ -1,0 +1,82 @@
+{
+  "provenance": {
+    "kind": "current_http_projection",
+    "source": "docs/architecture/examples/current/current-http-sources.json",
+    "operation_source": "recognize",
+    "description": "业务值来自已有HTTP响应；信封、reading_id、事实编号等是标注的目标契约元数据。请求是独立协议样例，不宣称是原始抓包。",
+    "notes": [
+      "image_data是协议用合成空白图，未向任何模型发送；示例output引用既有实测OCR，二者不是同一次调用。",
+      "reading_id是目标契约元数据，旧归档响应没有该字段。"
+    ]
+  },
+  "request": {
+    "schema_version": "1.0",
+    "operation": "recognize",
+    "request_id": "example-recognize",
+    "client": {
+      "type": "web",
+      "name": "contract-example",
+      "version": "1.0"
+    },
+    "subject": {
+      "profile_id": "contract_sample"
+    },
+    "input": {
+      "image_data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAAC0CAIAAAAl/ja/AAAB+ElEQVR4nO3SwQkAIBDAMHX/nc8lBKEkE/TRPTMLKs7vAHjJ0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmhRDk2JoUgxNiqFJMTQphibF0KQYmlVyAcFtBGV973EMAAAAAElFTkSuQmCC"
+    },
+    "options": {
+      "language": "zh-CN",
+      "modalities": [
+        "text",
+        "svg"
+      ]
+    }
+  },
+  "response": {
+    "schema_version": "1.0",
+    "operation": "recognize",
+    "request_id": "example-recognize",
+    "status": "needs_confirmation",
+    "verification": {
+      "level": "unavailable",
+      "label": "识别待核对；转录内容不等于数学核验"
+    },
+    "effects": [],
+    "output": {
+      "problem": "17.（本题满分12分）\n（1）计算：$-1^{2024}+|2-\\sqrt{3}|-\\sqrt[3]{-27}+2\\cos30^\\circ$。",
+      "problem_latex": "",
+      "steps": [
+        "解：$=-1+2-\\sqrt{3}+3+2\\times\\frac{\\sqrt{3}}{2}=4$"
+      ],
+      "question_type": "calculate",
+      "topic_id": "N1",
+      "diagram_description": "",
+      "uncertain_lines": [],
+      "warnings": [],
+      "supported": true,
+      "multiple_questions": false,
+      "needs_confirmation": true,
+      "reading_id": "contract-reading-from-archived-ocr"
+    },
+    "next_actions": [
+      {
+        "operation": "study",
+        "label": "核对读法后开始整理",
+        "requires": [
+          "confirmed_reading_id",
+          "problem",
+          "steps"
+        ]
+      }
+    ],
+    "meta": {
+      "model": "gpt-6.1-sol",
+      "seconds": 5.94,
+      "usage": {
+        "prompt_tokens": 5199,
+        "completion_tokens": 131,
+        "total_tokens": 5330
+      }
+    }
+  }
+}

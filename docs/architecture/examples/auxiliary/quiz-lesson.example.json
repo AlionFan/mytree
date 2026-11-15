@@ -1,0 +1,79 @@
+{
+  "case": "ASTRA-B-001 lesson recovery",
+  "provenance": {
+    "kind": "synthetic_design",
+    "source": "docs/collaboration/decisions.md",
+    "note": "字段示例，不冒充HTTP返回；真实只读/无答案/所有权由HTTP另验。"
+  },
+  "payloads": [
+    {
+      "schema": "QuizLessonQuery",
+      "payload": {
+        "student": "contract_sample",
+        "source_wrong_card_id": "wrong-F2-1",
+        "knowledge_id": "F2"
+      }
+    },
+    {
+      "schema": "QuizLessonOutput",
+      "payload": {
+        "source_wrong_card_id": "wrong-F2-1",
+        "knowledge_id": "F2",
+        "title": "平方差公式",
+        "rule": "两个数的平方差等于它们和与差的积。",
+        "tip": "先辨认两个平方，再比较公式结构。",
+        "problem": "x^2-9",
+        "student_steps": [
+          "(x-3)^2"
+        ],
+        "paused": true,
+        "resume_on": "2026-11-15",
+        "verification": {
+          "level": "unavailable",
+          "label": "参考规则与保存的来源；不代表检验作答通过"
+        }
+      }
+    },
+    {
+      "schema": "QuizLessonOutput",
+      "payload": {
+        "source_wrong_card_id": "wrong-F2-1",
+        "knowledge_id": "F2",
+        "title": "平方差公式",
+        "rule": "两个数的平方差等于它们和与差的积。",
+        "tip": "先辨认两个平方，再比较公式结构。",
+        "problem": "x^2-9",
+        "student_steps": [
+          "(x-3)^2"
+        ],
+        "paused": false,
+        "resume_on": null,
+        "verification": {
+          "level": "unavailable",
+          "label": "参考规则与保存的来源；不代表检验作答通过"
+        }
+      }
+    },
+    {
+      "schema": "QuizLessonError",
+      "payload": {
+        "error": "请核对知识点与来源卡。",
+        "code": "INVALID_INPUT"
+      }
+    },
+    {
+      "schema": "QuizLessonError",
+      "payload": {
+        "error": "没有找到这张来源卡。",
+        "code": "NOT_FOUND"
+      }
+    },
+    {
+      "schema": "QuizLessonError",
+      "payload": {
+        "error": "讲解暂时无法读取，请稍后重试。",
+        "code": "STORAGE_FAILED"
+      }
+    }
+  ]
+}

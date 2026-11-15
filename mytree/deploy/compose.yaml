@@ -1,0 +1,34 @@
+services:
+  mytree:
+    image: ${MYTREE_IMAGE:?required}
+    container_name: mytree
+    restart: unless-stopped
+    env_file: /srv/data/mytree/private/runtime.env
+    volumes:
+      - /srv/data/mytree/data:/data
+    networks: [coolify]
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    mem_limit: 640m
+    cpus: 1.0
+    pids_limit: 128
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: coolify
+      traefik.http.routers.mytree-http.entrypoints: http
+      traefik.http.routers.mytree-http.rule: Host(`mytree.joybeat.cn`)
+      traefik.http.routers.mytree-http.middlewares: mytree-https
+      traefik.http.routers.mytree-http.service: mytree
+      traefik.http.middlewares.mytree-https.redirectscheme.scheme: https
+      traefik.http.routers.mytree.entrypoints: https
+      traefik.http.routers.mytree.rule: Host(`mytree.joybeat.cn`)
+      traefik.http.routers.mytree.tls: 'true'
+      traefik.http.routers.mytree.tls.certresolver: letsencrypt
+      traefik.http.routers.mytree.service: mytree
+      traefik.http.services.mytree.loadbalancer.server.port: '8000'
+networks:
+  coolify:
+    external: true

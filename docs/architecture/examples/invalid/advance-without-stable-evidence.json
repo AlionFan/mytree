@@ -1,0 +1,33 @@
+{
+  "schema": "AgentResponse",
+  "reason": "进阶推荐缺少前置stable证据",
+  "payload": {
+    "schema_version": "1.0",
+    "operation": "recommend.next",
+    "request_id": "example-recommend-next",
+    "status": "ok",
+    "verification": {
+      "level": "ai_review",
+      "label": "AI 分析，尚待核对"
+    },
+    "effects": [],
+    "output": {
+      "items": [
+        {
+          "id": "recommend-F3-1",
+          "kind": "advance",
+          "knowledge_id": "F3",
+          "reason": "在这个设计场景中，提公因式已有间隔复习证据，可以选择了解它的后继知识点。",
+          "based_on": [
+            "f-practice-1",
+            "f-practice-2"
+          ],
+          "verification": {
+            "level": "ai_review",
+            "label": "推荐理由需结合真实学习事实复核"
+          }
+        }
+      ]
+    }
+  }
+}

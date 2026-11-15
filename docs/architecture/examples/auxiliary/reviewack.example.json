@@ -1,0 +1,24 @@
+{
+  "case": "D2",
+  "provenance": {
+    "kind": "synthetic_design",
+    "source": "docs/collaboration/B-DECISIONS.md"
+  },
+  "payloads": [
+    {
+      "schema": "ReviewAckRequest",
+      "payload": {
+        "student": "contract_sample",
+        "reminder_key": "reminder-20261114"
+      }
+    },
+    {
+      "schema": "ReviewAckResponse",
+      "payload": {
+        "ok": true,
+        "reminder_key": "reminder-20261114",
+        "reminder_allowed": false
+      }
+    }
+  ]
+}

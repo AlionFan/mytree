@@ -1,0 +1,79 @@
+{
+  "schema": "AgentResponse",
+  "reason": "今日待办超出3项",
+  "payload": {
+    "schema_version": "1.0",
+    "operation": "review.today",
+    "request_id": "example-review-today",
+    "status": "ok",
+    "verification": {
+      "level": "ai_review",
+      "label": "AI 分析，尚待核对"
+    },
+    "effects": [],
+    "output": {
+      "date": "2026-11-14",
+      "timezone": "Asia/Shanghai",
+      "items": [
+        {
+          "id": "task-0",
+          "knowledge_id": "F1",
+          "due_at": "2026-11-14T19:30:00+08:00",
+          "reason": "上次练习后到了约定的复习时段，先回想怎样提取共同因式。",
+          "based_on": [
+            "f-practice-1",
+            "f-practice-2"
+          ],
+          "task": {
+            "kind": "recall",
+            "prompt": "不用看提示，说说提完公因式后怎样检验。"
+          }
+        },
+        {
+          "id": "task-1",
+          "knowledge_id": "F1",
+          "due_at": "2026-11-14T19:30:00+08:00",
+          "reason": "上次练习后到了约定的复习时段，先回想怎样提取共同因式。",
+          "based_on": [
+            "f-practice-1",
+            "f-practice-2"
+          ],
+          "task": {
+            "kind": "recall",
+            "prompt": "不用看提示，说说提完公因式后怎样检验。"
+          }
+        },
+        {
+          "id": "task-2",
+          "knowledge_id": "F1",
+          "due_at": "2026-11-14T19:30:00+08:00",
+          "reason": "上次练习后到了约定的复习时段，先回想怎样提取共同因式。",
+          "based_on": [
+            "f-practice-1",
+            "f-practice-2"
+          ],
+          "task": {
+            "kind": "recall",
+            "prompt": "不用看提示，说说提完公因式后怎样检验。"
+          }
+        },
+        {
+          "id": "task-3",
+          "knowledge_id": "F1",
+          "due_at": "2026-11-14T19:30:00+08:00",
+          "reason": "上次练习后到了约定的复习时段，先回想怎样提取共同因式。",
+          "based_on": [
+            "f-practice-1",
+            "f-practice-2"
+          ],
+          "task": {
+            "kind": "recall",
+            "prompt": "不用看提示，说说提完公因式后怎样检验。"
+          }
+        }
+      ],
+      "reminder_allowed": true,
+      "reminder_key": "review-20261114-contract-sample"
+    }
+  }
+}

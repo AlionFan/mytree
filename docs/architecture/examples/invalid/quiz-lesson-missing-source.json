@@ -1,0 +1,8 @@
+{
+  "schema": "QuizLessonQuery",
+  "reason": "查询缺来源卡",
+  "payload": {
+    "student": "contract_sample",
+    "knowledge_id": "F2"
+  }
+}

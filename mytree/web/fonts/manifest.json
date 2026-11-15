@@ -1,0 +1,723 @@
+{
+  "WenKai-Regular.ttf": {
+    "url": "https://raw.githubusercontent.com/lxgw/LxgwWenKai/main/fonts/TTF/LXGWWenKai-Regular.ttf",
+    "source_sha256": "2d73eea94ad808999d90c0000c239a84a33b09d4bc6ab6c5b8bbf1eda8a7fc8b",
+    "source_bytes": 25928940,
+    "ui_subset_glyphs": 881,
+    "ui_subset_bytes": 163768
+  },
+  "WenKai-Medium.ttf": {
+    "url": "https://raw.githubusercontent.com/lxgw/LxgwWenKai/main/fonts/TTF/LXGWWenKai-Medium.ttf",
+    "source_sha256": "f4b8a34d1f838fe411540cb7c97b1c384ac9738a876c4104500bc42508b2312a",
+    "source_bytes": 25800076,
+    "ui_subset_glyphs": 881,
+    "ui_subset_bytes": 164448
+  },
+  "Sora.ttf": {
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/sora/Sora%5Bwght%5D.ttf",
+    "source_sha256": "84ff7096ae3ec6c8be47d906d1a0ba4de7f2ce78c615275c77301964a316e16c",
+    "source_bytes": 111400,
+    "version": "Version 2.000"
+  },
+  "STIXTwoMath-Regular.ttf": {
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/stixtwomath/STIXTwoMath-Regular.ttf",
+    "source_sha256": "562551b15b836e6e01d1b7350909baf3c8c8d83260c1190fbf4544333e6936de",
+    "source_bytes": 1517976,
+    "has_MATH_table": true,
+    "version": "Version 2.12 b168a"
+  },
+  "WenKai-OFL.txt": {
+    "url": "https://raw.githubusercontent.com/lxgw/LxgwWenKai/main/OFL.txt",
+    "source_sha256": "1a25e35da1031c6c3436fde545bb9cb5aca954e9873afe510c834b8b79bd21a0",
+    "source_bytes": 5171
+  },
+  "Sora-OFL.txt": {
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/sora/OFL.txt",
+    "source_sha256": "ba0b9729c9428ba79a0459ab8ec575791b51509dbec213e383d0316d37fec299",
+    "source_bytes": 4385
+  },
+  "STIX-OFL.txt": {
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/stixtwomath/OFL.txt",
+    "source_sha256": "0c8825913b60d858aacdb33c4ca6660a7d64b0d6464702efbb19313f5765861a",
+    "source_bytes": 4519
+  },
+  "outputs": {
+    "WenKai-Regular-ui.woff2": {
+      "sha256": "f3b984ae9b30916482b9e736a2ed29d4249426b27efaf1b7194ca9005efe2095",
+      "bytes": 163768
+    },
+    "WenKai-Regular-0.woff2": {
+      "sha256": "3193bb92e09e8eabcdaeeea46ed479cfc5125d151e338a9bfea2c3620e78d2d2",
+      "bytes": 44848
+    },
+    "WenKai-Regular-1.woff2": {
+      "sha256": "c6f463231e868e60a0bae40b932c337697dcb73cf2630b115c39cb0f3ea4efbd",
+      "bytes": 936
+    },
+    "WenKai-Regular-3.woff2": {
+      "sha256": "1a9f205ffd4a50ee697ddd3f8636faa833989d365d932d7af880c2dd86ff1e25",
+      "bytes": 20548
+    },
+    "WenKai-Regular-4.woff2": {
+      "sha256": "b56a49f4f0abb11e861e4767e7af824ba5ae2eacd4325403a2364c8409203b67",
+      "bytes": 64324
+    },
+    "WenKai-Regular-5.woff2": {
+      "sha256": "8cc48d8bab8848ac3860f47d5fe8f66c19a3fd67a8d8881c0f04a17f0c28eefc",
+      "bytes": 57312
+    },
+    "WenKai-Regular-6.woff2": {
+      "sha256": "587a9c4121009244feb9b9e06796f26b2dcd67cc6030fe358c20887ef5cc282d",
+      "bytes": 408536
+    },
+    "WenKai-Regular-7.woff2": {
+      "sha256": "551980296f19b3ab24bf5c683d9f99a90a5dc58ded637783fc84fa5b918a5886",
+      "bytes": 620180
+    },
+    "WenKai-Regular-8.woff2": {
+      "sha256": "fd222f95d50bc7574c2136d2be6000b4636d20a8b0a25c3802167d94ad1348e3",
+      "bytes": 647436
+    },
+    "WenKai-Regular-9.woff2": {
+      "sha256": "10871e94802c5299dd7dfe5824264d28ebbab08d2bb760b5e964d56d03be4f72",
+      "bytes": 623340
+    },
+    "WenKai-Regular-a.woff2": {
+      "sha256": "75cbe8c82c012965383fb2377eeb84e182f2971055c31f454f6c0ac7aacb029c",
+      "bytes": 470988
+    },
+    "WenKai-Regular-b.woff2": {
+      "sha256": "ba69bd009e6047ed25066edf6c7cefe64e2af1c2b7f5070de61cb733532ac950",
+      "bytes": 520544
+    },
+    "WenKai-Regular-c.woff2": {
+      "sha256": "de20b1d5901feb544097d691df8a6a864981ff16b0e02b45ece4138288064beb",
+      "bytes": 517156
+    },
+    "WenKai-Regular-d.woff2": {
+      "sha256": "796b4fe8944d72d0ee942356ac43a867495def332a6d039c08b95665c64f3eab",
+      "bytes": 566956
+    },
+    "WenKai-Regular-e.woff2": {
+      "sha256": "336ef77299c4c735a154f1953f763dc2c7808940423bf377df820b220d6355a8",
+      "bytes": 543324
+    },
+    "WenKai-Regular-f.woff2": {
+      "sha256": "c15c67d9d1403d374d30eb416148c2e6359e6b6fe0e6d2c974c180f337ce31bd",
+      "bytes": 571348
+    },
+    "WenKai-Regular-10.woff2": {
+      "sha256": "1403447efad0c33fb30102aefc095cf8211bb9e722c6afcfa40b028f50423571",
+      "bytes": 565592
+    },
+    "WenKai-Regular-11.woff2": {
+      "sha256": "72af0606145ec904419c6c129ae4c0e2ee0539ed6866c0c1d572a5bcfdd71bac",
+      "bytes": 558988
+    },
+    "WenKai-Regular-12.woff2": {
+      "sha256": "544a2ca16bd12fcd8c25fe49bf2ef7f2c9f63aa482182234b9b43d39f7b0944e",
+      "bytes": 577128
+    },
+    "WenKai-Regular-13.woff2": {
+      "sha256": "1bea4f3411c35e4fce7e50419bb5df8cf4acb3ad0ed3d371d4cd8873057561fa",
+      "bytes": 640060
+    },
+    "WenKai-Regular-14.woff2": {
+      "sha256": "89b8e649aab3f0df9e02c91a7c068a07491934b106ef8453fcb8fc8250f7962a",
+      "bytes": 5524
+    },
+    "WenKai-Regular-15.woff2": {
+      "sha256": "29c673a5b0a95ffb2320f59a79600c4f89c405c1667ce220fc633ce1ff3e5163",
+      "bytes": 32952
+    },
+    "WenKai-Regular-16.woff2": {
+      "sha256": "fc8a32cdb1325f1ff5e0c4cf86115bf4c1896a3845fee141830032c769d473a4",
+      "bytes": 54068
+    },
+    "WenKai-Regular-17.woff2": {
+      "sha256": "0f2a7827badae849ad448775e62e4de2f93957991acac43cd5973cde0ba7f283",
+      "bytes": 56460
+    },
+    "WenKai-Regular-18.woff2": {
+      "sha256": "2238b29482ad813ef215dc992482d4aede94a18993d1862b05825a419767b637",
+      "bytes": 56940
+    },
+    "WenKai-Regular-19.woff2": {
+      "sha256": "7c8438bf6cb88863c446a23204a94290781bd47fa877986fb58191ac0e3f2149",
+      "bytes": 54908
+    },
+    "WenKai-Regular-1a.woff2": {
+      "sha256": "cff307b472cb64ca06013bcc960cd49c9d5536488d02910ce91acd88f3d9cc54",
+      "bytes": 62772
+    },
+    "WenKai-Regular-1c.woff2": {
+      "sha256": "64635199dff4d381caaf2932a09021651c94d70001ee40459d5f50dad965c604",
+      "bytes": 6264
+    },
+    "WenKai-Regular-1d.woff2": {
+      "sha256": "cfc445b917cd541c0cb2701cac1a2498014be4fe9a3ac8e3b40f374383388bdb",
+      "bytes": 672
+    },
+    "WenKai-Regular-1e.woff2": {
+      "sha256": "1f4878347cf39833cc90b3266aafcebd8da5ab95eaacbeb5489b0ba7cb89de60",
+      "bytes": 808
+    },
+    "WenKai-Regular-1f.woff2": {
+      "sha256": "76c886119ee2b6465e162a5fc10c007f88c9f816fd5e37d1ae4db3d3599ca98d",
+      "bytes": 131880
+    },
+    "WenKai-Regular-20.woff2": {
+      "sha256": "02b51021234dae6044ce45d68dd9ba639b0c5f3de29f95c1fb773c25d07f8a68",
+      "bytes": 768
+    },
+    "WenKai-Regular-23.woff2": {
+      "sha256": "3519825c2cda066e5bd51317b5df164fc7c920b8dae638a5d20961c16fbd4537",
+      "bytes": 740
+    },
+    "WenKai-Regular-2d.woff2": {
+      "sha256": "5d283ca850e7e6af7a204ab9a395c2f9160cfd48af62cccc9b04fcb188d21823",
+      "bytes": 1264
+    },
+    "WenKai-Regular-36.woff2": {
+      "sha256": "54ccd5f1e6828c67ad651f696fe73f54174758bad271ae860a1f6a517d170d22",
+      "bytes": 1016
+    },
+    "WenKai-Regular-3a.woff2": {
+      "sha256": "38c762b130b8df715405caff96b52f477c597476c243f22fff8bb3b526fd6408",
+      "bytes": 2656
+    },
+    "WenKai-Regular-3e.woff2": {
+      "sha256": "c3a067934a180b1a705f25a51c8f78ab5eedac483f18fcecfcf1a05a1885e234",
+      "bytes": 47100
+    },
+    "WenKai-Regular-3f.woff2": {
+      "sha256": "5c25ae1ef3cdf38736a5ad6291bd2bad303bfc5c109a7a2596e2dba20773e85d",
+      "bytes": 4640
+    },
+    "WenKai-Regular-40.woff2": {
+      "sha256": "9a44e1014d0d15d4ca69869046e4c0c22ed9aecea8871ce1cfaa3b58b02a7a35",
+      "bytes": 33556
+    },
+    "WenKai-Regular-41.woff2": {
+      "sha256": "7c1e5b0ecb81d8279dd26eb8f72eda69f467f873c9c79360055fe48420546db3",
+      "bytes": 35128
+    },
+    "WenKai-Regular-42.woff2": {
+      "sha256": "d2e8462b1126ce2b193efea8a5ea1d5c36d700410d836fec0d995d973ea5ccc7",
+      "bytes": 29660
+    },
+    "WenKai-Regular-43.woff2": {
+      "sha256": "99ba9baefd60fa0d5d6a02a310de98904c25eeec7f687a44296a3a49201a740c",
+      "bytes": 34820
+    },
+    "WenKai-Regular-44.woff2": {
+      "sha256": "f1b5d10baf01cb6c90f46e912caaa8b6ef4fc60a09d0757fee69b405cd5132fb",
+      "bytes": 19680
+    },
+    "WenKai-Regular-45.woff2": {
+      "sha256": "10a2b0bb795b3ed1fde30b91c15b58ffc970baff991e43d6ec573bac5a7fdcb2",
+      "bytes": 38552
+    },
+    "WenKai-Regular-46.woff2": {
+      "sha256": "73e4c7fa7e536dfb35d9a465b960e5a869bff2d22e099c38538a898c744ee35f",
+      "bytes": 34952
+    },
+    "WenKai-Regular-47.woff2": {
+      "sha256": "d088365bba61f907a5010b7f26b4e4cad48977dacc75b60f4d1eecf9b537634b",
+      "bytes": 26828
+    },
+    "WenKai-Regular-48.woff2": {
+      "sha256": "f64f8e6bfb590d0bd792a08be809ca1030926a462819684b3571aef214e5a412",
+      "bytes": 33808
+    },
+    "WenKai-Regular-49.woff2": {
+      "sha256": "92a47ea77b69de3085e2b03f194f2ac18515a3f5a4e5604f8028bb8470d98bd5",
+      "bytes": 31784
+    },
+    "WenKai-Regular-4a.woff2": {
+      "sha256": "5733f838cafdffce33c5abf985d7b46d6a8ed92b23122ad9290530c0f4d98e1e",
+      "bytes": 29292
+    },
+    "WenKai-Regular-4b.woff2": {
+      "sha256": "9703996ccd79638b44e63e20b3d777ca03cb8021529e10a4f598aa39b245a896",
+      "bytes": 42356
+    },
+    "WenKai-Regular-4c.woff2": {
+      "sha256": "3626b0901b1bdedfa6aa4775e26e9924a6e094279b4beb2423085dfd43b06dc5",
+      "bytes": 36580
+    },
+    "WenKai-Regular-4d.woff2": {
+      "sha256": "7c5234e6e66ee3feb3c715a2770dc64aeb9593166bccd32026c529bc6eac2dda",
+      "bytes": 35620
+    },
+    "WenKai-Regular-4e.woff2": {
+      "sha256": "b2ef124f7aa08e431b48daae97d96930a3ffa8230c00bb1105e9990cf99a4b5e",
+      "bytes": 43532
+    },
+    "WenKai-Regular-4f.woff2": {
+      "sha256": "fe9eddffe7b0a8de0214b85975f64696d127d0e8ded3b9e044bb23878e94b24e",
+      "bytes": 33820
+    },
+    "WenKai-Regular-50.woff2": {
+      "sha256": "2a782e1b9957aef03348c11a90b0def74c0b771eefc4ed51ec9fad5132fb6519",
+      "bytes": 40356
+    },
+    "WenKai-Regular-51.woff2": {
+      "sha256": "4774e3e7dff9a274d2ffba8ddbae1acee0bc0c639a5b54dbb72efb1cdbf9901f",
+      "bytes": 38100
+    },
+    "WenKai-Regular-52.woff2": {
+      "sha256": "443ea88f57f0bf08677ddc394cd3293b4b3682329214b252b448b2110e7fe99a",
+      "bytes": 30996
+    },
+    "WenKai-Regular-53.woff2": {
+      "sha256": "be935e43b072ab56549817bcad25a43ad15769ea87678a7076c29bb225a3d84f",
+      "bytes": 46112
+    },
+    "WenKai-Regular-54.woff2": {
+      "sha256": "ebd1e57f0a982b588f47620257dfce47389c516f05a9160533d6e59974bb6c9d",
+      "bytes": 51076
+    },
+    "WenKai-Regular-55.woff2": {
+      "sha256": "11d61344fe88cd69a41ec179d0877eb2f4e48874fbeb0ac7449e557b8d943775",
+      "bytes": 13524
+    },
+    "WenKai-Regular-56.woff2": {
+      "sha256": "b40e9c604c7726f49568b438cae346f691bc1ddeed638af98ac8e9719b6d0cdf",
+      "bytes": 55784
+    },
+    "WenKai-Regular-57.woff2": {
+      "sha256": "c81ffdd85c299dc490fe88435a6b1e7432d02fb6f6b66df83a573470b49c6f10",
+      "bytes": 26204
+    },
+    "WenKai-Regular-58.woff2": {
+      "sha256": "aeed56311da150b14090acf64d208bd9ae9d09f315f834ce3a9db63f1311d827",
+      "bytes": 23884
+    },
+    "WenKai-Regular-59.woff2": {
+      "sha256": "0c3affd5b19c72b530933fbc96976bf1ad97934bb3a99ccb56de18bd0a0e1be1",
+      "bytes": 38020
+    },
+    "WenKai-Regular-5a.woff2": {
+      "sha256": "1f81a8656ced442ee75dc08114252afa4092326dc81015067bda24b033f9b5ed",
+      "bytes": 6172
+    },
+    "WenKai-Regular-5b.woff2": {
+      "sha256": "1ef4c5c2ef63ca204a6f7ab6fed39ce25f3071cb2a1a3d3af77255636f2ff85d",
+      "bytes": 6040
+    },
+    "WenKai-Regular-5c.woff2": {
+      "sha256": "67b7220c01b41880e28f7713e0a9299f35b3b454684ff88db64333cc80e11c01",
+      "bytes": 13248
+    },
+    "WenKai-Regular-5d.woff2": {
+      "sha256": "af5ed1907d77cfd2f9115a1b89074a97cb48b882d24e1bcc9e4e8b1bd0f7c3b2",
+      "bytes": 17448
+    },
+    "WenKai-Regular-5f.woff2": {
+      "sha256": "625a6f66e618be8e995673b8f896c7125093113ac25fac1adbc793bbd26c5fd3",
+      "bytes": 16828
+    },
+    "WenKai-Regular-60.woff2": {
+      "sha256": "f21f969f1e674c4c5dd1a90ac3c50a767f6b9b63c9f320b79c06d9387d20ce78",
+      "bytes": 22468
+    },
+    "WenKai-Regular-61.woff2": {
+      "sha256": "0f29a13cc45079207036e6332f34e10788f01ecd4f0708b94f163735f2423df4",
+      "bytes": 31476
+    },
+    "WenKai-Regular-62.woff2": {
+      "sha256": "a4e5000357dc349cdf5d391d88b971ee5faf3b9f73ed093f2e5c11ce54562b51",
+      "bytes": 27328
+    },
+    "WenKai-Regular-63.woff2": {
+      "sha256": "342cef41ab101f5d1756cf160eb561972d5e29c16d37f74db86752b94041f28f",
+      "bytes": 10376
+    },
+    "WenKai-Regular-64.woff2": {
+      "sha256": "16ce8cd8a5b56f527db06e9e803e0017c20c4950df9acda28f36119d25652934",
+      "bytes": 11976
+    },
+    "WenKai-Regular-65.woff2": {
+      "sha256": "ede419bae592553c9a9214744be5d88ea5accae3426e49df8e95fac2f6c4f972",
+      "bytes": 5772
+    },
+    "WenKai-Regular-66.woff2": {
+      "sha256": "d88035a96878f6001288feb437554bb59d65b9322beba270ca324e5e10c4f168",
+      "bytes": 4460
+    },
+    "WenKai-Regular-7a.woff2": {
+      "sha256": "523c369cac5bb03fd2257664a1e52ac1f7fd6a5991f8c773a90ba335d9739ccc",
+      "bytes": 2476
+    },
+    "WenKai-Regular-7b.woff2": {
+      "sha256": "fce47324f6bc0052b1364ec3073bae1018216d5c3b396a7b26d31a7970ea3f91",
+      "bytes": 1744
+    },
+    "WenKai-Regular-7c.woff2": {
+      "sha256": "72353cc64d446a7fd259fa9c71a26f6114762313584dc65a3f585b1f19952a5e",
+      "bytes": 2868
+    },
+    "WenKai-Regular-7d.woff2": {
+      "sha256": "5309256be2e87c2c2491425eb7cca8a6b49b2e12e366ab541607c7ea01e3c038",
+      "bytes": 2072
+    },
+    "WenKai-Regular-7e.woff2": {
+      "sha256": "c98bfadf4b92b73e1ad03b9d57531b7cbd1bc1573bf5e8cf2fb789d747a0e7d9",
+      "bytes": 1624
+    },
+    "WenKai-Regular-7f.woff2": {
+      "sha256": "4ce7135f250524c1c8445e696a7633c70a2262f3ab8cc68d02fd80e79bc16403",
+      "bytes": 5984
+    },
+    "WenKai-Regular-1ff.woff2": {
+      "sha256": "34e276dd426acf8242d12f3ce72dafadc385dd5c6b162c72d245fb40740ffc7d",
+      "bytes": 1028
+    },
+    "WenKai-Medium-ui.woff2": {
+      "sha256": "3aa82189f6e2e17fca868002fd83531d39d46fa2d9b58773f3f607b2b6c6dc0d",
+      "bytes": 164448
+    },
+    "WenKai-Medium-0.woff2": {
+      "sha256": "1182851fc356d48840d984d4aa9b5c6a058a668b1f0f84bccedd8de4c1f83aec",
+      "bytes": 47912
+    },
+    "WenKai-Medium-1.woff2": {
+      "sha256": "271513e94014c30b5c9a6ac6399df9a24759f3532e93f3fe448c1b5b856c1310",
+      "bytes": 924
+    },
+    "WenKai-Medium-3.woff2": {
+      "sha256": "b67f976354d387a842e84b29ffabe9647b1ffd5bb04a83d22e4d33e980afa72e",
+      "bytes": 21032
+    },
+    "WenKai-Medium-4.woff2": {
+      "sha256": "b699c48d9b128ef9253ab09b0683b19c2a24f0f8917fa30df4d50075ff8d057b",
+      "bytes": 66084
+    },
+    "WenKai-Medium-5.woff2": {
+      "sha256": "50bbc09d615b74a2187b56b08ae886fbc4a457642657018f2d859379014f6079",
+      "bytes": 57460
+    },
+    "WenKai-Medium-6.woff2": {
+      "sha256": "20028bafe2afba2cf959b1f6185ed82c1445b0fdeb4d4300c8af2c6fff4ab766",
+      "bytes": 427400
+    },
+    "WenKai-Medium-7.woff2": {
+      "sha256": "b5c105927f20873a05ba9a5ec2c45d36889810977dc0dfba3a8d64095124cea1",
+      "bytes": 673260
+    },
+    "WenKai-Medium-8.woff2": {
+      "sha256": "48831a12f2902140907ead210c9a0bd871eb0cdcdc2176b01453049be1470533",
+      "bytes": 699216
+    },
+    "WenKai-Medium-9.woff2": {
+      "sha256": "551267943f395f2a34590dd2106541aa44ba3063ec1fc805e06a0d306ccfe4be",
+      "bytes": 670396
+    },
+    "WenKai-Medium-a.woff2": {
+      "sha256": "82ac76971f3286149186d669cb85f83ab698eff9fb52befc4a2a9b49caff2287",
+      "bytes": 481492
+    },
+    "WenKai-Medium-b.woff2": {
+      "sha256": "26fa65e2c77dc4a9ea1f86ab817d53056b3c2ee963a72416f90f2ebe1f83d2f0",
+      "bytes": 537816
+    },
+    "WenKai-Medium-c.woff2": {
+      "sha256": "93e762b53aa42f3d01614fa9887c5554a61d9368ba907360638289ffc5b95023",
+      "bytes": 537900
+    },
+    "WenKai-Medium-d.woff2": {
+      "sha256": "b93794233e6a5ab203fa8a05d436051862bd96411bb3787dbd0c88fe2b7f8c3a",
+      "bytes": 586976
+    },
+    "WenKai-Medium-e.woff2": {
+      "sha256": "9b434c2714d065cde8b54327ccdda942ac8003f7aa2b6f9f53d3876c80ab3517",
+      "bytes": 568060
+    },
+    "WenKai-Medium-f.woff2": {
+      "sha256": "2308cbc2879c0ef74511638b4ea91b68acf6e5030c730ab6bfdb2982c340bdae",
+      "bytes": 601824
+    },
+    "WenKai-Medium-10.woff2": {
+      "sha256": "ef537d97546bd8a6738ad0972d3b500cbb3b94990a6348a107e5ffbf6e0c39b6",
+      "bytes": 590332
+    },
+    "WenKai-Medium-11.woff2": {
+      "sha256": "804ee79ae01b7aa7f59934cfeb8f41322250d8f4e2573b3a631e4536f9a586d6",
+      "bytes": 589364
+    },
+    "WenKai-Medium-12.woff2": {
+      "sha256": "9f5ddc473c50c16d2a294309cd2a36ecd1796006730cfc549006f6c088814221",
+      "bytes": 607972
+    },
+    "WenKai-Medium-13.woff2": {
+      "sha256": "83a1481b7d4b74598c5f19f260db28f095155f5b0864c14761733dc7340467ea",
+      "bytes": 685496
+    },
+    "WenKai-Medium-14.woff2": {
+      "sha256": "dea6c59816b29fa0138d8d5515761804d1131a3423b61f800f85f2245985b97b",
+      "bytes": 5872
+    },
+    "WenKai-Medium-15.woff2": {
+      "sha256": "0ebe61ba780ae5a8f10ec72027188781348b0223c9523fc486cf83634e5b68d4",
+      "bytes": 40392
+    },
+    "WenKai-Medium-16.woff2": {
+      "sha256": "6a01f6a515cd19e4754cf355e5f89da3ca711fb8bb53c225096f368f6ac39029",
+      "bytes": 68220
+    },
+    "WenKai-Medium-17.woff2": {
+      "sha256": "0c02f38776a20be5adeb86349a60a3846a8fb036127713ffa12a4efa88548aae",
+      "bytes": 67224
+    },
+    "WenKai-Medium-18.woff2": {
+      "sha256": "ecf57210ae26229c8aae172aecfeb27e7a66600afe3d8b7e8d8671c0e5617bb5",
+      "bytes": 67144
+    },
+    "WenKai-Medium-19.woff2": {
+      "sha256": "5c46b2a2f693af0bb28efb1a2061ee80948c60edece820d4faa0ccfd20979b84",
+      "bytes": 68160
+    },
+    "WenKai-Medium-1a.woff2": {
+      "sha256": "896e94b9031ed6d04baa8ee6bdb556b7d06e7038c269bc05df3c8a3affb4828b",
+      "bytes": 74108
+    },
+    "WenKai-Medium-1c.woff2": {
+      "sha256": "0a514746078ff344107d6a26127221bf8069923cdec40c7fc538cb5604f10968",
+      "bytes": 5844
+    },
+    "WenKai-Medium-1d.woff2": {
+      "sha256": "db5acbf28134c08a620348a2bf371afbcd00194750e01a2445a684d8af8c7920",
+      "bytes": 680
+    },
+    "WenKai-Medium-1e.woff2": {
+      "sha256": "fd0b39d432ca67fb4a556f517f79469c0bd1d46f262be0e0340de8a1c4f9996b",
+      "bytes": 780
+    },
+    "WenKai-Medium-1f.woff2": {
+      "sha256": "941b6bf01e992e887833be461551c21c54a8e1402647fff0fc65b60d91e86585",
+      "bytes": 132628
+    },
+    "WenKai-Medium-20.woff2": {
+      "sha256": "13628517b84198c1988edcb496451bd571eca3eaa67b7f8f1a2461b16e7ba532",
+      "bytes": 728
+    },
+    "WenKai-Medium-23.woff2": {
+      "sha256": "0f8f7c291fdc9da56cb718ca4eea306f93c9b9e2fc993a34b7e0652c41f3b304",
+      "bytes": 748
+    },
+    "WenKai-Medium-2d.woff2": {
+      "sha256": "e09252d3b7d4b0f58e059056b58f86bbd8fc9514db76627f9b806514b9a897fa",
+      "bytes": 1244
+    },
+    "WenKai-Medium-36.woff2": {
+      "sha256": "983ddfa94e7fb6c48106735126adb59b85370f2c9d58aa1e6c0c4707175d0ad9",
+      "bytes": 1020
+    },
+    "WenKai-Medium-3a.woff2": {
+      "sha256": "f7de27597632e4805fecb990961855d451a5f4b2e8fe4e8fd578164dc12e48a2",
+      "bytes": 2512
+    },
+    "WenKai-Medium-3e.woff2": {
+      "sha256": "3e6ae8730b786ee5bbf483b1e404d76c536a92fc217289efb2bc5648990f66c4",
+      "bytes": 47156
+    },
+    "WenKai-Medium-3f.woff2": {
+      "sha256": "a58a3777a26c0398d33cacdf9c2071b5b93d9a3c4e2eac8e80176a3522ea14be",
+      "bytes": 4500
+    },
+    "WenKai-Medium-40.woff2": {
+      "sha256": "950a510c4085d5f5882a89151376b5a6d6343dfa43b4c69c9069317a36ccefa2",
+      "bytes": 34512
+    },
+    "WenKai-Medium-41.woff2": {
+      "sha256": "c22e5b4ac2b82e6e4cd2330dba87dd49cc14ff9f05535d3370bf55cd1f034893",
+      "bytes": 36044
+    },
+    "WenKai-Medium-42.woff2": {
+      "sha256": "33fa255363855e1f0cda15a94868c1d8067c1824cb5a2033bb1a4b70aa12311e",
+      "bytes": 30532
+    },
+    "WenKai-Medium-43.woff2": {
+      "sha256": "48c5aca1d9ecfbe0b797465e310d8279ce9c7bd8bb9ba8613039f35c3082af5f",
+      "bytes": 36388
+    },
+    "WenKai-Medium-44.woff2": {
+      "sha256": "c84e62187a0e6824804662bb237cd8c9a91651e207ea9225d5656bd91efb9a53",
+      "bytes": 20440
+    },
+    "WenKai-Medium-45.woff2": {
+      "sha256": "27c51e6b036bb2774ccae461f766c703432587632f7660684b2d1889a1bdcd4e",
+      "bytes": 39800
+    },
+    "WenKai-Medium-46.woff2": {
+      "sha256": "c9bb1a0babf575a827d3d4797060d0618eb130d670e84f1f4b76c91cfa93103f",
+      "bytes": 36304
+    },
+    "WenKai-Medium-47.woff2": {
+      "sha256": "d5e25599cceb8289d03a45506099f7e36b55f75fdcab5873d6a1bd22643c7f7a",
+      "bytes": 28136
+    },
+    "WenKai-Medium-48.woff2": {
+      "sha256": "6226f758286b189a6fbf51e08db4b4f0a77ae444a4e16b721ded08cf8ceba6c3",
+      "bytes": 35692
+    },
+    "WenKai-Medium-49.woff2": {
+      "sha256": "81ba8f41c6eb1fec4ef50341e989523682ba6b8bdf0c010ea77cc231ee8535e1",
+      "bytes": 33168
+    },
+    "WenKai-Medium-4a.woff2": {
+      "sha256": "94c99e3049cf82b29b0a49bef710655976d87a98407e5cc6374fc26e3872f56f",
+      "bytes": 30724
+    },
+    "WenKai-Medium-4b.woff2": {
+      "sha256": "edffe57be67589016906b6e216df9b501dd3ebd56447cd380774eebab51aa721",
+      "bytes": 44412
+    },
+    "WenKai-Medium-4c.woff2": {
+      "sha256": "85f66c624609c5fae8f1e14862cb5bac60ac0cda60453096654ff2464ee2173a",
+      "bytes": 38832
+    },
+    "WenKai-Medium-4d.woff2": {
+      "sha256": "7b8aa49766ca4600255451386a58fc3cb69d3bfa39d4516ea307bd0a8332c4d6",
+      "bytes": 37264
+    },
+    "WenKai-Medium-4e.woff2": {
+      "sha256": "3ba2b881b7c50a2641a2f5a6c655c6f00bd8c707c9d6b10889d5cadfa2d21c16",
+      "bytes": 46480
+    },
+    "WenKai-Medium-4f.woff2": {
+      "sha256": "72e708a7e6246cde8d492f337a2d5dbd374696de890b5271634096e8ef66ee60",
+      "bytes": 35856
+    },
+    "WenKai-Medium-50.woff2": {
+      "sha256": "956620456b7b2c97bd91a7283d21373e41f2bddc6d2786d16b1b32231b1d4079",
+      "bytes": 42532
+    },
+    "WenKai-Medium-51.woff2": {
+      "sha256": "bbfa1570ceb27ae27bfd60b9933295eb4384eae3025b02b65aa3124a862cfc96",
+      "bytes": 39652
+    },
+    "WenKai-Medium-52.woff2": {
+      "sha256": "56e9b7485c94490902850a1a17463dc2291711c10dc51fad343a060f749e4abf",
+      "bytes": 32656
+    },
+    "WenKai-Medium-53.woff2": {
+      "sha256": "b21a356e918dde199691ec1617e2bedc7f55df78fe03267254efdaa35f9b9999",
+      "bytes": 49528
+    },
+    "WenKai-Medium-54.woff2": {
+      "sha256": "fc8053802ded8b1c3121edba227db17f6ac702fb9cc13f0d3bcaf30b5dfb6fc8",
+      "bytes": 55256
+    },
+    "WenKai-Medium-55.woff2": {
+      "sha256": "2590895e40774fa2b3e929305c758cbc28774c9e41d51f64b6661c94b6961ff9",
+      "bytes": 13608
+    },
+    "WenKai-Medium-56.woff2": {
+      "sha256": "0535fe54bac1f4ec9f692849353879303d0cd23372a851009197c0670c9a3218",
+      "bytes": 56732
+    },
+    "WenKai-Medium-57.woff2": {
+      "sha256": "1a3814f6877b226e0cce199ed06579741fbb53f9d8e16d377548f36316f00e11",
+      "bytes": 26376
+    },
+    "WenKai-Medium-58.woff2": {
+      "sha256": "4412d58df5c4aa5b4a02d762c538aada0b8b7489e7744e16883010650ac32bba",
+      "bytes": 24048
+    },
+    "WenKai-Medium-59.woff2": {
+      "sha256": "55cafff8b9ee2e868e751a1a845b1d7fbc31dcd552bed01fad071a139c5f7eec",
+      "bytes": 39052
+    },
+    "WenKai-Medium-5a.woff2": {
+      "sha256": "bebb7c179a43f322bf92e638ca88e7cb6f13b7734f1fb539c6958781db6655bf",
+      "bytes": 6080
+    },
+    "WenKai-Medium-5b.woff2": {
+      "sha256": "475393310beb608b8c94e5920cd64fc54eda1120536ff0aa4bbc77af59b752a0",
+      "bytes": 5960
+    },
+    "WenKai-Medium-5c.woff2": {
+      "sha256": "d2ac53f6904fa5d04fdc233c44658012680c7a8cc2e2c3386d1405801ffafc39",
+      "bytes": 13624
+    },
+    "WenKai-Medium-5d.woff2": {
+      "sha256": "3d3e73cc134257cc72f6921ea70f779b769762621c59446af35a126bd65ec900",
+      "bytes": 17476
+    },
+    "WenKai-Medium-5f.woff2": {
+      "sha256": "e0dbe41094775be02b32e5e00d649072017ec3f315e68a3a4c452af21461fc93",
+      "bytes": 16824
+    },
+    "WenKai-Medium-60.woff2": {
+      "sha256": "83e0ca4edfb4edeaa1066c6af2746af45e552f3eea962b5f8f9335ea38b57ace",
+      "bytes": 22472
+    },
+    "WenKai-Medium-61.woff2": {
+      "sha256": "a468a4774ebd6238e23a7491b4f64f86a1830c7bce743415dd794284077cc367",
+      "bytes": 32024
+    },
+    "WenKai-Medium-62.woff2": {
+      "sha256": "1be32a114c6b3382858ea74d597730d5fa499b9b0b2b0e4941913ac1dd4f8d73",
+      "bytes": 27728
+    },
+    "WenKai-Medium-63.woff2": {
+      "sha256": "f5f8901eb9c4168c92481fe692e3cbbfd68824431f5401f5e7b69c4f4cff93b6",
+      "bytes": 10504
+    },
+    "WenKai-Medium-64.woff2": {
+      "sha256": "9d97bf21b66d0cf1d9dc2bba9e67ab8147ed25f05eb624e9b3cffa915f495456",
+      "bytes": 12476
+    },
+    "WenKai-Medium-65.woff2": {
+      "sha256": "7b7fdb8d06ffaf46749238f11c86a76816b200e3652bfebfd14f95381db17b5f",
+      "bytes": 6220
+    },
+    "WenKai-Medium-66.woff2": {
+      "sha256": "b7646641978f39e80129e4ca07bc49a8bdd9dfe973dd0da625afcda13292ab1f",
+      "bytes": 4792
+    },
+    "WenKai-Medium-7a.woff2": {
+      "sha256": "2b6bdbfa74ea26f583aa1380b8a6dd1a094e6a937864a87398feff07cb11e66b",
+      "bytes": 2664
+    },
+    "WenKai-Medium-7b.woff2": {
+      "sha256": "f11b296b6a8042447b5aa6e763542ff4685a1ae72278954652074f4566d7dc84",
+      "bytes": 1892
+    },
+    "WenKai-Medium-7c.woff2": {
+      "sha256": "bbb53947a76496142dccac0491d9f6507518fdc232d0033a1b5317d4aecdbf68",
+      "bytes": 3056
+    },
+    "WenKai-Medium-7d.woff2": {
+      "sha256": "fcfd95ee2ec031b06466b2c084079fc980106eabcab2650e3750ebb7215dd62a",
+      "bytes": 2276
+    },
+    "WenKai-Medium-7e.woff2": {
+      "sha256": "f5b1c7cc0c477cfba4259544b2d21813bb7e2016bb183802acc3ac2c6ba9e8f7",
+      "bytes": 1784
+    },
+    "WenKai-Medium-7f.woff2": {
+      "sha256": "6a5f09e494d99b7e71b564773a7a5af60dc0c673a46d1810d3adb73473f8a0b6",
+      "bytes": 6616
+    },
+    "WenKai-Medium-1ff.woff2": {
+      "sha256": "256f2b3cebf2e61a2afa08033f4ae002c8661938eb10856d8a0d6317d667072a",
+      "bytes": 1048
+    },
+    "Sora.woff2": {
+      "sha256": "b098c57e1cee76638f4d0efe353dc63077b117dd406ec9d37ef56a8e19231830",
+      "bytes": 49276
+    },
+    "STIXTwoMath-Regular.woff2": {
+      "sha256": "af260ca13a29d5b8ca25eca2bfaa31e5ffd76bd8b825f681838f3692574e7f62",
+      "bytes": 558596
+    }
+  },
+  "critical_ui_expansion": {
+    "added_characters": "界①②③",
+    "reason": "Guide labels previously downloaded two large fallback blocks",
+    "source_fonts_unchanged": true
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "provenance": {
+    "kind": "synthetic_design",
+    "description": "设计示例，非真实返回；不表示功能已经实现。"
+  },
+  "request": {
+    "schema_version": "1.0",
+    "operation": "profile.set_preference",
+    "request_id": "example-profile-set_preference",
+    "client": {
+      "type": "web",
+      "name": "contract-example",
+      "version": "1.0"
+    },
+    "subject": {
+      "profile_id": "contract_sample"
+    },
+    "input": {
+      "preferences": {
+        "availability": {
+          "days": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "time": "19:30"
+        },
+        "goal": "explore",
+        "advance_opt_in": true
+      }
+    },
+    "options": {
+      "language": "zh-CN",
+      "modalities": [
+        "text",
+        "svg"
+      ]
+    }
+  },
+  "response": {
+    "schema_version": "1.0",
+    "operation": "profile.set_preference",
+    "request_id": "example-profile-set_preference",
+    "status": "ok",
+    "verification": {
+      "level": "verified",
+      "label": "程序核对的示例结果"
+    },
+    "effects": [
+      {
+        "kind": "update_profile",
+        "id": "contract_sample",
+        "idempotent_replay": false
+      }
+    ],
+    "output": {
+      "preferences": {
+        "availability": {
+          "days": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "time": "19:30"
+        },
+        "goal": "explore",
+        "advance_opt_in": true
+      },
+      "saved": true
+    }
+  }
+}

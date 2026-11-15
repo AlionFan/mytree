@@ -1,0 +1,478 @@
+{
+  "checked_at": "2026-11-14T23:51:41+08:00",
+  "schema_sha256": "bffcb8a900208d6da4f9db8c83bdf3eed7e46e6e489a7de8212f72db3b0afdd6",
+  "schema_valid": true,
+  "operation_count": 23,
+  "definition_count": 108,
+  "local_refs_checked": 212,
+  "valid_payloads": 92,
+  "rejected_examples": 51,
+  "statuses": [
+    "error",
+    "needs_confirmation",
+    "ok",
+    "partial"
+  ],
+  "non_drag_tree_move": true,
+  "covered_operations": [
+    "card.edit",
+    "card.list",
+    "card.unlock",
+    "chat",
+    "feedback.add",
+    "growth.get",
+    "leaderboard.get",
+    "practice.check",
+    "practice.create",
+    "profile.dispute",
+    "profile.get",
+    "profile.set_preference",
+    "quiz.answer",
+    "quiz.start",
+    "recognize",
+    "recommend.next",
+    "review.complete",
+    "review.today",
+    "schedule.set",
+    "speech",
+    "study",
+    "tree.get",
+    "tree.move"
+  ],
+  "validations": [
+    "docs/architecture/examples/current/chat.example.json:AgentRequest",
+    "docs/architecture/examples/current/chat.example.json:AgentResponse",
+    "docs/architecture/examples/current/feedback-add.example.json:AgentRequest",
+    "docs/architecture/examples/current/feedback-add.example.json:AgentResponse",
+    "docs/architecture/examples/current/practice-check.example.json:AgentRequest",
+    "docs/architecture/examples/current/practice-check.example.json:AgentResponse",
+    "docs/architecture/examples/current/practice-create.example.json:AgentRequest",
+    "docs/architecture/examples/current/practice-create.example.json:AgentResponse",
+    "docs/architecture/examples/current/profile-get.example.json:AgentRequest",
+    "docs/architecture/examples/current/profile-get.example.json:AgentResponse",
+    "docs/architecture/examples/current/recognize.example.json:AgentRequest",
+    "docs/architecture/examples/current/recognize.example.json:AgentResponse",
+    "docs/architecture/examples/current/schedule-set.example.json:AgentRequest",
+    "docs/architecture/examples/current/schedule-set.example.json:AgentResponse",
+    "docs/architecture/examples/current/speech.example.json:AgentRequest",
+    "docs/architecture/examples/current/speech.example.json:AgentResponse",
+    "docs/architecture/examples/current/study.example.json:AgentRequest",
+    "docs/architecture/examples/current/study.example.json:AgentResponse",
+    "docs/architecture/examples/design/card-edit.example.json:AgentRequest",
+    "docs/architecture/examples/design/card-edit.example.json:AgentResponse",
+    "docs/architecture/examples/design/card-list.example.json:AgentRequest",
+    "docs/architecture/examples/design/card-list.example.json:AgentResponse",
+    "docs/architecture/examples/design/card-unlock.example.json:AgentRequest",
+    "docs/architecture/examples/design/card-unlock.example.json:AgentResponse",
+    "docs/architecture/examples/design/growth-get.example.json:AgentRequest",
+    "docs/architecture/examples/design/growth-get.example.json:AgentResponse",
+    "docs/architecture/examples/design/leaderboard-get.example.json:AgentRequest",
+    "docs/architecture/examples/design/leaderboard-get.example.json:AgentResponse",
+    "docs/architecture/examples/design/profile-dispute.example.json:AgentRequest",
+    "docs/architecture/examples/design/profile-dispute.example.json:AgentResponse",
+    "docs/architecture/examples/design/profile-set_preference.example.json:AgentRequest",
+    "docs/architecture/examples/design/profile-set_preference.example.json:AgentResponse",
+    "docs/architecture/examples/design/quiz-answer.example.json:AgentRequest",
+    "docs/architecture/examples/design/quiz-answer.example.json:AgentResponse",
+    "docs/architecture/examples/design/quiz-start.example.json:AgentRequest",
+    "docs/architecture/examples/design/quiz-start.example.json:AgentResponse",
+    "docs/architecture/examples/design/recommend-next.example.json:AgentRequest",
+    "docs/architecture/examples/design/recommend-next.example.json:AgentResponse",
+    "docs/architecture/examples/design/review-complete.example.json:AgentRequest",
+    "docs/architecture/examples/design/review-complete.example.json:AgentResponse",
+    "docs/architecture/examples/design/review-today.example.json:AgentRequest",
+    "docs/architecture/examples/design/review-today.example.json:AgentResponse",
+    "docs/architecture/examples/design/tree-get.example.json:AgentRequest",
+    "docs/architecture/examples/design/tree-get.example.json:AgentResponse",
+    "docs/architecture/examples/design/tree-move.example.json:AgentRequest",
+    "docs/architecture/examples/design/tree-move.example.json:AgentResponse",
+    "docs/architecture/examples/runtime/card-edit.example.json:AgentRequest",
+    "docs/architecture/examples/runtime/card-edit.example.json:AgentResponse",
+    "docs/architecture/examples/runtime/card-list.example.json:AgentRequest",
+    "docs/architecture/examples/runtime/card-list.example.json:AgentResponse",
+    "docs/architecture/examples/runtime/card-unlock.example.json:AgentRequest",
+    "docs/architecture/examples/runtime/card-unlock.example.json:AgentResponse",
+    "docs/architecture/examples/runtime/growth-get.example.json:AgentRequest",
+    "docs/architecture/examples/runtime/growth-get.example.json:AgentResponse",
+    "docs/architecture/examples/runtime/quiz-answer.example.json:AgentRequest",
+    "docs/architecture/examples/runtime/quiz-answer.example.json:AgentResponse",
+    "docs/architecture/examples/runtime/quiz-start.example.json:AgentRequest",
+    "docs/architecture/examples/runtime/quiz-start.example.json:AgentResponse",
+    "docs/architecture/examples/runtime/recognize.example.json:AgentRequest",
+    "docs/architecture/examples/runtime/recognize.example.json:AgentResponse",
+    "docs/architecture/examples/runtime/review-complete.example.json:AgentRequest",
+    "docs/architecture/examples/runtime/review-complete.example.json:AgentResponse",
+    "docs/architecture/examples/runtime/review-today.example.json:AgentRequest",
+    "docs/architecture/examples/runtime/review-today.example.json:AgentResponse",
+    "docs/architecture/examples/runtime/study.example.json:AgentRequest",
+    "docs/architecture/examples/runtime/study.example.json:AgentResponse",
+    "docs/architecture/examples/runtime/tree-get.example.json:AgentRequest",
+    "docs/architecture/examples/runtime/tree-get.example.json:AgentResponse",
+    "docs/architecture/examples/runtime/tree-move.example.json:AgentRequest",
+    "docs/architecture/examples/runtime/tree-move.example.json:AgentResponse",
+    "docs/architecture/examples/auxiliary/card-lesson-revision.example.json:WrongCard",
+    "docs/architecture/examples/auxiliary/card-wrong-revision.example.json:WrongCard",
+    "docs/architecture/examples/auxiliary/error-current-revision.example.json:AgentResponse",
+    "docs/architecture/examples/auxiliary/hint-diagnosis.example.json:HintRequest",
+    "docs/architecture/examples/auxiliary/hint-diagnosis.example.json:HintResponse",
+    "docs/architecture/examples/auxiliary/hint-quiz_exercise.example.json:HintRequest",
+    "docs/architecture/examples/auxiliary/hint-quiz_exercise.example.json:HintResponse",
+    "docs/architecture/examples/auxiliary/quiz-lesson.example.json:QuizLessonQuery",
+    "docs/architecture/examples/auxiliary/quiz-lesson.example.json:QuizLessonOutput",
+    "docs/architecture/examples/auxiliary/quiz-lesson.example.json:QuizLessonOutput",
+    "docs/architecture/examples/auxiliary/quiz-lesson.example.json:QuizLessonError",
+    "docs/architecture/examples/auxiliary/quiz-lesson.example.json:QuizLessonError",
+    "docs/architecture/examples/auxiliary/quiz-lesson.example.json:QuizLessonError",
+    "docs/architecture/examples/auxiliary/reading-ac-d1.example.json:RecognizeOutput",
+    "docs/architecture/examples/auxiliary/reading-ac-d2.example.json:RecognizeOutput",
+    "docs/architecture/examples/auxiliary/reading-ac-d3.example.json:RecognizeOutput",
+    "docs/architecture/examples/auxiliary/reading-ac-d4.example.json:RecognizeOutput",
+    "docs/architecture/examples/auxiliary/reading-ac-d5.example.json:RecognizeOutput",
+    "docs/architecture/examples/auxiliary/reviewack.example.json:ReviewAckRequest",
+    "docs/architecture/examples/auxiliary/reviewack.example.json:ReviewAckResponse",
+    "docs/architecture/examples/auxiliary/reviewsnooze.example.json:ReviewSnoozeRequest",
+    "docs/architecture/examples/auxiliary/reviewsnooze.example.json:ReviewSnoozeResponse"
+  ],
+  "counterexamples": [
+    {
+      "file": "docs/architecture/examples/invalid/advance-without-stable-evidence.json",
+      "reason": "进阶推荐缺少前置stable证据",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/confirmation-with-effects.json",
+      "reason": "needs_confirmation不允许非空effects",
+      "errors": 2,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/error-negative-current-revision.json",
+      "reason": "冲突当前版本不能为负数。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/error-revision-without-conflict.json",
+      "reason": "D8：只有CONFLICT错误可以携带current_revision。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/growth-negative-component.json",
+      "reason": "成长分类不允许负数。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/growth-total-mismatch.json",
+      "reason": "INC-A6：形状合法但20+6+2不等于29，由语义检查拒绝，非JSON Schema算术。",
+      "errors": 1,
+      "validation_layer": "semantic_arithmetic"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/hint-client-answer.json",
+      "reason": "D1：提示只能由服务端发放。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/hint-client-text.json",
+      "reason": "D1：提示只能由服务端发放。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/hint-level-boolean.json",
+      "reason": "D1：提示级别只能为整数1、2、3。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/hint-level-four.json",
+      "reason": "D1：提示级别只能为整数1、2、3。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/hint-level-fraction.json",
+      "reason": "D1：提示级别只能为整数1、2、3。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/hint-level-zero.json",
+      "reason": "D1：提示级别只能为整数1、2、3。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/hint-unpaired-exercise_id.json",
+      "reason": "D1：quiz_id与exercise_id必须同时出现。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/hint-unpaired-quiz_id.json",
+      "reason": "D1：quiz_id与exercise_id必须同时出现。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/inference-without-facts.json",
+      "reason": "推断缺少based_on",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/knowledge-without-wrong-card-source.json",
+      "reason": "知识卡必须有至少一张来源错题卡。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/leaderboard-private-field.json",
+      "reason": "INC-A5：榜单只能输出昵称、成长与树，不得含实名。",
+      "errors": 2,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/missing-request-id.json",
+      "reason": "缺少必填request_id",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/quiz-answer-client-correctness.json",
+      "reason": "INC-A4：客户端不能提交正确性或分数。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/quiz-lesson-date-format.json",
+      "reason": "恢复日使用YYYY-MM-DD格式",
+      "errors": 2,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/quiz-lesson-extra-answer.json",
+      "reason": "只读讲解输出不允许检验答案字段",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/quiz-lesson-extra-query.json",
+      "reason": "未知查询参数应拒绝",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/quiz-lesson-h3.json",
+      "reason": "不允许通过额外提示字段泄露检验H3",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/quiz-lesson-invalid-error.json",
+      "reason": "只读讲解不调用模型，不返回模型鉴权错误码",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/quiz-lesson-missing-resume.json",
+      "reason": "必须显式给恢复日或null，不能靠客户端旧缓存",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/quiz-lesson-missing-source.json",
+      "reason": "查询缺来源卡",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/quiz-lesson-paused-without-date.json",
+      "reason": "暂停时必须给北京时间恢复日期",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/quiz-lesson-unpaused-with-date.json",
+      "reason": "未暂停时恢复日期必须为null",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/reading-d1-inferred-without-selection.json",
+      "reason": "D4/AC-D1：inferred必须有selected且match候选。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/reading-d1-match-without-evidence.json",
+      "reason": "D4/AC-D1：match必须有依据。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/reading-d2-answer-key-evidence.json",
+      "reason": "D4/AC-D2：不使用标准答案作为读法依据。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/reading-d2-invalid-consistency.json",
+      "reason": "D4/AC-D2：一致性不能变成数学判对错。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/reading-d3-long-quote.json",
+      "reason": "D4/AC-D3：依据摘录最多200字。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/reading-d3-negative-source-line.json",
+      "reason": "D4/AC-D3：依据行号不能为负数。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/reading-d4-missing-group.json",
+      "reason": "D4/AC-D4：每个候选必须有组。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/reading-d4-nonboolean-selection.json",
+      "reason": "D4/AC-D4：selected必须布尔。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/reading-d5-string-line.json",
+      "reason": "D4/AC-D5：候选行号必须整数。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/reading-d5-unknown-candidate-field.json",
+      "reason": "D4/AC-D5：候选不能夹带额外标准答案字段。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/reading-multiple-selected-in-group.json",
+      "reason": "D4：结构合法但同组选择两个候选，由独立语义检查拒绝。",
+      "errors": 1,
+      "validation_layer": "semantic_recognition_groups"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/relation-without-reason.json",
+      "reason": "新建关系必须带孩子填写的relation_reason。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/reviewack-missing-key.json",
+      "reason": "D2：缺reminder_key拒绝。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/reviewsnooze-missing-key.json",
+      "reason": "D2：缺reminder_key拒绝。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/too-many-review-items.json",
+      "reason": "今日待办超出3项",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/unknown-operation.json",
+      "reason": "未声明操作不能进入Agent",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/unlock-transfer-with-full-solution.json",
+      "reason": "使用完整解法的迁移答对不能满足解锁。",
+      "errors": 4,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/unlock-with-only-one-correct.json",
+      "reason": "即使自报U1通过，三题中只有一道合格正确也拒绝。",
+      "errors": 4,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/unlock-with-unverified-question.json",
+      "reason": "INC-A3：U3=false时不能unlocked=true。",
+      "errors": 3,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/wrong-card-invalid-study-status.json",
+      "reason": "D7：错题/学习卡必须带有效版本和诊断状态。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/wrong-card-missing-revision.json",
+      "reason": "D7：错题/学习卡必须带有效版本和诊断状态。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/wrong-card-missing-study-status.json",
+      "reason": "D7：错题/学习卡必须带有效版本和诊断状态。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    },
+    {
+      "file": "docs/architecture/examples/invalid/wrong-card-negative-revision.json",
+      "reason": "D7：错题/学习卡必须带有效版本和诊断状态。",
+      "errors": 1,
+      "validation_layer": "json_schema"
+    }
+  ],
+  "runtime_http_operations": [
+    "card.edit",
+    "card.list",
+    "card.unlock",
+    "growth.get",
+    "quiz.answer",
+    "quiz.start",
+    "recognize",
+    "review.complete",
+    "review.today",
+    "study",
+    "tree.get",
+    "tree.move"
+  ],
+  "design_or_projection_only_operations": [
+    "chat",
+    "feedback.add",
+    "leaderboard.get",
+    "practice.check",
+    "practice.create",
+    "profile.dispute",
+    "profile.get",
+    "profile.set_preference",
+    "recommend.next",
+    "schedule.set",
+    "speech"
+  ],
+  "growth_arithmetic_checked": true,
+  "limits": [
+    "运行样例逐字对照真实本机HTTP归档；本地假模型，不代表OCR质量",
+    "阶段A设计与旧接口投影保留为历史，不能代替当前运行证据",
+    "JSON Schema不计算成长分总和；本脚本单独验证算术",
+    "JSON Schema不证明数学结论、身份授权、事实引用存在或提醒实际送达"
+  ]
+}

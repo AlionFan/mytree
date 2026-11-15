@@ -1,0 +1,43 @@
+{
+  "schema": "AgentResponse",
+  "reason": "成长分类不允许负数。",
+  "payload": {
+    "schema_version": "1.0",
+    "operation": "growth.get",
+    "request_id": "design-growth-get",
+    "status": "ok",
+    "verification": {
+      "level": "verified",
+      "label": "设计场景中的规则声明；不是现有接口返回"
+    },
+    "effects": [],
+    "output": {
+      "total": 28,
+      "components": {
+        "scale": 20,
+        "lushness": -3,
+        "relations": 2
+      },
+      "evidence": {
+        "scale": [
+          "growth-unlock-F1",
+          "growth-unlock-F3"
+        ],
+        "lushness": [
+          "growth-review-F1-1",
+          "growth-review-F1-2"
+        ],
+        "relations": [
+          "growth-relation-F1-F3"
+        ]
+      },
+      "period": {
+        "week_start": "2026-11-09",
+        "week_end": "2026-11-15",
+        "timezone": "Asia/Shanghai"
+      },
+      "weekly_delta": 18,
+      "score_rule": "growth-v1-provisional"
+    }
+  }
+}

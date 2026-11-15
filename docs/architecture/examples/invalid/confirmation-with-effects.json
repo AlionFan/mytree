@@ -1,0 +1,57 @@
+{
+  "schema": "AgentResponse",
+  "reason": "needs_confirmation不允许非空effects",
+  "payload": {
+    "schema_version": "1.0",
+    "operation": "recognize",
+    "request_id": "example-recognize",
+    "status": "needs_confirmation",
+    "verification": {
+      "level": "unavailable",
+      "label": "识别待核对；转录内容不等于数学核验"
+    },
+    "effects": [
+      {
+        "kind": "update_profile",
+        "id": "contract_sample",
+        "idempotent_replay": false
+      }
+    ],
+    "output": {
+      "problem": "17.（本题满分12分）\n（1）计算：$-1^{2024}+|2-\\sqrt{3}|-\\sqrt[3]{-27}+2\\cos30^\\circ$。",
+      "problem_latex": "",
+      "steps": [
+        "解：$=-1+2-\\sqrt{3}+3+2\\times\\frac{\\sqrt{3}}{2}=4$"
+      ],
+      "question_type": "calculate",
+      "topic_id": "N1",
+      "diagram_description": "",
+      "uncertain_lines": [],
+      "warnings": [],
+      "supported": true,
+      "multiple_questions": false,
+      "needs_confirmation": true,
+      "reading_id": "contract-reading-from-archived-ocr"
+    },
+    "next_actions": [
+      {
+        "operation": "study",
+        "label": "核对读法后开始整理",
+        "requires": [
+          "confirmed_reading_id",
+          "problem",
+          "steps"
+        ]
+      }
+    ],
+    "meta": {
+      "model": "gpt-6.1-sol",
+      "seconds": 5.94,
+      "usage": {
+        "prompt_tokens": 5199,
+        "completion_tokens": 131,
+        "total_tokens": 5330
+      }
+    }
+  }
+}

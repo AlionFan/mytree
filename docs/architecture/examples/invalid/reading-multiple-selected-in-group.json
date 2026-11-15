@@ -1,0 +1,49 @@
+{
+  "schema": "RecognitionGroups",
+  "payload": {
+    "reading_id": "design-reading",
+    "problem": "求学生所写的不等式结论。",
+    "steps": [
+      "4<x<8",
+      "整数解为5,6,7"
+    ],
+    "supported": true,
+    "multiple_questions": false,
+    "needs_confirmation": true,
+    "inferred": true,
+    "alternatives": [
+      {
+        "id": "less",
+        "group": "ambiguous-line-1",
+        "line": 1,
+        "text": "4<x<8",
+        "evidence": [
+          {
+            "line": 2,
+            "quote": "整数解为5,6,7",
+            "kind": "integer_list"
+          }
+        ],
+        "consistency": "match",
+        "selected": true
+      },
+      {
+        "id": "same-group-other-id",
+        "group": "ambiguous-line-1",
+        "line": 1,
+        "text": "4<x<8",
+        "evidence": [
+          {
+            "line": 2,
+            "quote": "整数解为5,6,7",
+            "kind": "integer_list"
+          }
+        ],
+        "consistency": "match",
+        "selected": true
+      }
+    ],
+    "reading_evidence": "依据你写的“整数解为5,6,7”，将模糊行读作4<x<8。这是推断，可以改回。"
+  },
+  "reason": "D4：结构合法但同组选择两个候选，由独立语义检查拒绝。"
+}
