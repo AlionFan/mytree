@@ -42,3 +42,6 @@ local.properties
 
 # Local presentation and submission exports
 /output/
+
+# Android remains local until debugging and acceptance are complete
+/android/

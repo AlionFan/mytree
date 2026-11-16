@@ -9,7 +9,6 @@
 - **巩固练习**：AI 根据原题考点生成三道关联练习，提供参考反馈。未程序核验的 AI 反馈不计入掌握或成绩；旧三题检验入口已停用。
 - **探索者**：语音对话与视频英语探索，可选择本人题目进行辅导；画面与对话字幕同屏。
 - **学习记录**：上传图片历史、知识树、复习计划及家长查看入口。
-- **Android 客户端**：通过受限 HTTPS WebView 复用网站和账号，附原生拍照、文件选择及媒体权限处理。
 
 项目仍在持续开发。复杂几何证明、模糊手写与真实语音识别存在限制；上传源码不代表每项功能都已验收或与线上版本完全一致。
 
@@ -40,7 +39,6 @@ cp .env.example .env.local
 | [`mytree/tests/`](mytree/tests/) | 后端回归测试 |
 | [`mytree/scripts/`](mytree/scripts/) | 配置、评测与浏览器检查工具 |
 | [`mytree/deploy/`](mytree/deploy/) | Docker 与部署脚本，部署前需按自身环境配置 |
-| [`android/`](android/) | Android WebView 客户端与构建说明 |
 | [`docs/architecture/agent-contract.schema.json`](docs/architecture/agent-contract.schema.json) | 服务端运行所需的输入输出契约 |
 
 ## 开发与验证
@@ -54,10 +52,14 @@ node --check web/app.js
 
 部分集成测试和评测脚本需要模型服务、浏览器、Android SDK 或未公开的本机验收材料，需按相应说明准备。测试数据应使用临时档案，避免写入真实学习记录。
 
-详细说明：[`网页运行与接口`](mytree/README.md)、[`Android 构建`](android/README.md)、[`架构契约`](docs/architecture/agent-contract.schema.json)。子目录 README 含历史版本说明；部分内部材料和验收档案未公开，相关链接或专项脚本所需输入需另行准备。
+详细说明：[`网页运行与接口`](mytree/README.md)、[`架构契约`](docs/architecture/agent-contract.schema.json)。子目录 README 含历史版本说明；部分内部材料和验收档案未公开，相关链接或专项脚本所需输入需另行准备。
 
 ## 数据与版本
 
 公开仓库仅用于源码与开发文档分享。密钥、私有 `.env`、账号及学习数据库、用户上传原图、原始试卷、本机 QA 档案、构建缓存和 APK 不纳入提交。不要将真实凭据或儿童资料写入 Issue、日志或提交。
 
 `main` 是公开源码分支。开发快照、验收结论和线上发布分别核验。前端依赖和字体保留各自许可证；本项目未另外指定整体开源许可证。
+
+## Android 状态
+
+按用户2026-11-16要求，安卓客户端代码暂从 GitHub 移除；本地保留用于后续调试，修复并完成验收后再上传。当前仓库提供网页与服务端。详见[状态说明](docs/android-status.md)。
