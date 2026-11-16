@@ -16,7 +16,6 @@
 | [AGENTS.md](AGENTS.md) / [ASTRA.md](ASTRA.md) | Codex 执行与 Astra 指导的开发入口 |
 | [协作协议](docs/collaboration/README.md) | 消息、任务认领、接口协调和交接 |
 | [网页 README](mytree/README.md) | 安装、运行、各端入口、模型配置及 HTTP 契约 |
-| [Android README](android/README.md) | 原生原型状态与构建方法 |
 | [设计约定](docs/design-contract.md) | 页面、上传与状态细节 |
 | [验证记录](docs/evidence/) | 历次版本的检查与截图，不代表当前代码已通过 |
 | [项目思路](项目思路与准备清单.md) / [技术方案](技术方案与选型.md) | 比赛背景、商业设想和历史技术选型 |
@@ -30,3 +29,7 @@
 GitHub 私有仓库：[AlionFan/mytree](https://github.com/AlionFan/mytree)，开发分支为 `develop`。首次导入是当前工作区开发快照，包含正在开发的功能，不等于线上发布或全部验收通过。
 
 凭据、用户数据、原始试卷、本机验收档案、虚拟环境和构建产物保留本地，不提交。配置从 `mytree/.env.example` 创建本机私有配置；依赖历史实拍材料或本机验收档案的专项脚本需另行准备相应输入。
+
+## Android 状态
+
+按用户2026-11-16要求，安卓客户端代码暂从 GitHub 移除；本地保留用于后续调试，修复并完成验收后再上传。当前仓库提供网页与服务端。详见[状态说明](docs/android-status.md)。
