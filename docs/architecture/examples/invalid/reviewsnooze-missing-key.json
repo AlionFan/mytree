@@ -1,7 +1,0 @@
-{
-  "schema": "ReviewSnoozeRequest",
-  "payload": {
-    "student": "contract_sample"
-  },
-  "reason": "D2：缺reminder_key拒绝。"
-}

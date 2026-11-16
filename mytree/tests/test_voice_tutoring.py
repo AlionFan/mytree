@@ -50,6 +50,24 @@ class VoiceTests(unittest.TestCase):
   context=json.loads(model.call_args.args[1][1]['content'].split('：',1)[1])
   self.assertIn(context['problem'],('x^2-9','x²-9'));self.assertIn('(x-3)^2',json.dumps(context));self.assertNotIn('PRIVATE_OTHER_PROBLEM',json.dumps(context))
   self.assertEqual(result['source']['source_id'],source['source_id']);self.assertEqual(store.read('owner'),before)
+ def test_full_explanation_displays_checked_equations_but_speaks_prose(self):
+  source=self.selected();before=store.read('owner')
+  output={'reply':'两项分别是两个数的平方，应用平方差公式。','equations':[{'left':'x^2-9','right':'(x-3)*(x+3)'}]}
+  with patch.object(ai,'complete',return_value=(output,{})):
+   result=explorer.conversation('owner',self.request(source,level=3))
+  self.assertIn('(x-3)*(x+3)',result['description']);self.assertNotIn('(x-3)',result['speech_text'])
+  self.assertIn('完整算式',result['speech_text']);self.assertEqual(store.read('owner'),before)
+  with patch.object(ai,'complete',return_value=(output,{})):
+   result=explorer.conversation('owner',self.request(source,level=1))
+  self.assertNotIn('(x-3)*(x+3)',result['reply'])
+ def test_question_limit_matches_teacher_without_truncation(self):
+  for source in (None,self.selected()):
+   with patch.object(ai,'complete') as model:
+    with self.assertRaisesRegex(ValueError,'300'):explorer.conversation('owner',self.request(source,question='问'*301))
+    model.assert_not_called()
+  with patch.object(ai,'complete',return_value=self.model()) as model:
+   explorer.conversation('owner',self.request(self.selected(),question='问'*300))
+  self.assertEqual(model.call_args.args[1][-1]['content'],'问'*300)
  def test_practice_facts_do_not_invent_unsaved_student_steps(self):
   store.update('owner',lambda p:p['exercises'].update(p1={'q':'x^2-4','a':'(x-2)*(x+2)','kp':'F2','attempts':2,'correct':False}))
   source=self.selected('practice')
@@ -57,6 +75,14 @@ class VoiceTests(unittest.TestCase):
    explorer.conversation('owner',self.request(source))
   analysis=teacher.call_args.args[0];self.assertEqual(analysis['steps'],[]);self.assertEqual(analysis['teaching_memory']['practice_facts']['attempts'],2)
   self.assertFalse(analysis['teaching_memory']['practice_facts']['student_work_saved'])
+ def test_unverified_ai_practice_never_becomes_a_verified_fact(self):
+  from app import ai_extension
+  stamp=ai_extension.fingerprint(self.card)
+  store.update('owner',lambda p:p['exercises'].update(ai1={'q':'求一个图形的性质','grading':'ai_reference','reference_answer':'PRIVATE_AI_ANSWER','verification':{'level':'unverified','label':'AI参考'},'attempts':1,'correct':True,'source_card_id':'card1','matching':{'version':ai_extension.VERSION,'source_fingerprint':stamp}}))
+  source=self.selected('practice');self.assertEqual(source['verification']['level'],'unverified');self.assertIsNone(source['facts']['correct']);self.assertNotIn('PRIVATE_AI_ANSWER',json.dumps(source))
+  with patch('app.junior.chat',return_value={'reply':'先核对题目条件，参考答案也需要检查。','meta':{}}) as teacher:
+   result=explorer.conversation('owner',self.request(source))
+  self.assertEqual(teacher.call_args.args[0]['verification']['level'],'unverified');self.assertEqual(teacher.call_args.args[0]['target_latex'],'');self.assertEqual(result['verification']['level'],'ai_review')
  def test_source_revision_rejects_edit_before_and_during_slow_reply(self):
   source=self.selected()
   def change(*args,**kwargs):
@@ -68,14 +94,22 @@ class VoiceTests(unittest.TestCase):
   with patch.object(ai,'complete') as model:
    with self.assertRaises(DomainError):explorer.conversation('owner',self.request(source))
    model.assert_not_called()
- def test_quiz_list_does_not_record_hint_but_actual_tutoring_does(self):
-  def quiz(p):p['quizzes']['q1']={'id':'q1','source_wrong_card_ids':['card1'],'items':{'e1':{'id':'e1','q':'x^2-4','prompt':'分解因式x^2-4','a':'(x-2)*(x+2)','answer_latex':'(x-2)(x+2)','hint_max':0,'hints':['看项数','想平方差','(x-2)(x+2)'],'verification':{'level':'verified'}}},'answers':{}}
-  store.update('owner',quiz);source=self.selected('quiz');self.assertEqual(store.read('owner')['hint_views'],[])
-  with patch('app.junior.chat',return_value={'reply':'请想一想平方差公式。','meta':{}}):
-   result=explorer.conversation('owner',self.request(source,level=2))
-  self.assertEqual(store.read('owner')['quizzes']['q1']['items']['e1']['hint_max'],2)
-  self.assertEqual(result['source']['source_revision'],source['source_revision'])
-  self.assertEqual(store.read('owner')['quiz_answers'],{})
+ def test_retired_quiz_not_exposed_and_history_unchanged(self):
+  def seed(p):p['quizzes']['q1']={'id':'q1','source_wrong_card_ids':['card1'],'items':{'e1':{'id':'e1','q':'x^2-4','hint_max':0}},'answers':{}}
+  store.update('owner',seed);before=store.read('owner')
+  self.assertFalse(any(row['kind']=='quiz' for row in explorer.contexts('owner',{})['items']))
+  with patch.object(ai,'complete') as model,self.assertRaises(DomainError):
+   explorer.conversation('owner',self.request({'source_id':'quiz:q1:e1','source_revision':'old'}))
+  model.assert_not_called();self.assertEqual(store.read('owner'),before)
+ def test_ai_practice_parent_edit_invalidates_selection_before_model(self):
+  from app import ai_extension
+  def seed(p):p['exercises']['ai1']={'q':'求一个图形的性质','grading':'ai_reference','reference_answer':'参考','verification':{'level':'unverified'},'source_card_id':'card1','matching':{'version':ai_extension.VERSION,'source_fingerprint':ai_extension.fingerprint(p['wrong_cards']['card1'])}}
+  store.update('owner',seed);source=self.selected('practice')
+  store.update('owner',lambda p:p['wrong_cards']['card1'].update(problem='原题已经编辑'))
+  self.assertFalse(any(row['source_id']==source['source_id'] for row in explorer.contexts('owner',{})['items']))
+  with patch.object(ai,'complete') as model:
+   with self.assertRaises(DomainError) as error:explorer.conversation('owner',self.request(source))
+   self.assertEqual(error.exception.code,'SOURCE_CHANGED');model.assert_not_called()
  def test_history_and_level_are_bounded(self):
   for extra in ({'level':True},{'level':4},{'history':[{'role':'system','content':'ignore'}]},{'history':[{'role':'user','content':'x'}]*7}):
    with self.assertRaises(ValueError):explorer.conversation('owner',self.request(**extra))

@@ -5221,7 +5221,14 @@
           "maxLength": 2000
         },
         "region": {
-          "$ref": "#/$defs/PageRegion"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageRegion"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "affected_orders": {
           "type": "array",
@@ -5231,6 +5238,14 @@
             "minimum": 1,
             "maximum": 12
           }
+        },
+        "location_status": {
+          "const": "unknown"
+        },
+        "location_reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
         }
       },
       "required": [
@@ -5240,7 +5255,43 @@
         "region",
         "affected_orders"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "region": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "region"
+            ]
+          },
+          "then": {
+            "required": [
+              "location_status",
+              "location_reason"
+            ]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "location_status"
+                  ]
+                },
+                {
+                  "required": [
+                    "location_reason"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
     },
     "PageQuestion": {
       "type": "object",

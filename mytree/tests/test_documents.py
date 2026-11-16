@@ -63,20 +63,22 @@ class DocumentTests(unittest.TestCase):
         self.assertEqual(profile.diagnosis_for('upload_student',result['diagnosis_id'])['status'],'not_attempted')
         repeated=self.post('/api/learn',{'problem':'x^2-9','request_id':'lesson_once'})
         self.assertEqual(result['diagnosis_id'],repeated['diagnosis_id'])
-    def test_question_learning_practice_and_review_close_the_loop(self):
+    def test_question_learning_ai_practice_preserves_mastery_and_review(self):
+        from app import store
         lesson=self.post('/api/learn',{'problem':'x^2-9'})
-        exercises=self.post('/api/practice',{'diagnosis_id':lesson['diagnosis_id']})
-        self.assertEqual(exercises['kp'],'F2');self.assertEqual(len(exercises['items']),3)
+        output={'items':[{'question':f'因式分解 x^2-{n*n}','answer':f'(x-{n})(x+{n})','solution':f'平方差公式，得到(x-{n})(x+{n})','relation':'同类平方差变式','answer_kind':'text'} for n in (2,4,5)]}
+        before=store.read('upload_student')
+        with patch('app.ai.complete',return_value=(output,{'model':'synthetic'})):
+            exercises=self.post('/api/practice',{'diagnosis_id':lesson['diagnosis_id']})
+        self.assertEqual(len(exercises['items']),3)
         for item in exercises['items']:
-            answer=profile._load()['upload_student']['exercises'][item['id']]['a']
-            result=self.post('/api/practice/check',{'exercise_id':item['id'],'answer':answer})
-            self.assertTrue(result['correct'])
-        saved=profile.get('upload_student')
-        self.assertEqual(saved['practice_correct'],3);self.assertFalse(saved['causes'])
-        self.assertEqual(saved['history'],0)
-        review=saved['reviews'][0];self.assertEqual(review['kp'],'F2');self.assertEqual(review['completed'],1);self.assertEqual(review['stage'],0)
-        next_items=self.post('/api/practice',{'review_id':'F2'})
-        self.assertEqual(next_items['kp'],'F2')
+            self.assertNotIn('reference_answer',item)
+            with patch('app.ai.complete',return_value=({'feedback':'请核对平方差两项。'},{})):
+                result=self.post('/api/practice/check',{'exercise_id':item['id'],'answer':'(x-2)(x+2)'})
+            self.assertIsNone(result['correct']);self.assertIn('reference_solution',result)
+        after=store.read('upload_student')
+        for key in ('lit','kp_correct','practice_correct','events','reviews','quiz_answers'):
+            self.assertEqual(before[key],after[key])
     def test_unsupported_question_is_not_silently_changed(self):
         result=self.post('/api/learn',{'problem':'x^2-9=0'})
         self.assertFalse(result['ok']);self.assertEqual(profile.get('upload_student')['history'],0)

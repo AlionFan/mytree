@@ -167,8 +167,7 @@ def edit(student, params, request_id):
 def hint(student, params):
     contract.definition('HintRequest', params)
     if params.get('quiz_id') or params.get('exercise_id'):
-        from . import quiz
-        return quiz.hint(student,params)
+        raise DomainError('UNSUPPORTED','三题检验已停用，请使用巩固练习。',422)
     analysis = profile.diagnosis_for(student,params['diagnosis_id'])
     hints = analysis.get('hints') or []
     if len(hints) < params['level']:

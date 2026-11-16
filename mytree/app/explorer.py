@@ -57,29 +57,31 @@ def _sources(student):
         rows.append(_context('card:'+key,'card','上传题目' if card.get('_source') else '已整理题目',card['problem'],card.get('verification',{}),facts,analysis))
         if sum(row['kind']=='card' for row in rows)>=20:break
     for key,item in list(reversed(list(value['exercises'].items())))[:15]:
+        if not _valid_ai_parent(value,item):continue
         problem=item.get('question_md') or item.get('prompt') or item.get('q') or item.get('question')
         if not isinstance(problem,str) or not problem:continue
-        facts={'attempts':item.get('attempts',0),'correct':bool(item.get('correct')),'student_work_saved':False}
+        facts={'attempts':item.get('attempts',0),'correct':bool(item.get('correct')) if (item.get('verification') or {}).get('level','verified')=='verified' else None,'student_work_saved':bool(item.get('last_answer'))}
+        if item.get('last_answer'):facts['student_answer']=str(item['last_answer'])[:480]
         analysis=_exercise_analysis(item,problem,facts)
         rows.append(_context('practice:'+key,'practice','练习题',problem,analysis['verification'],facts,analysis))
-    for qid,group in list(reversed(list(value['quizzes'].items())))[:5]:
-        for eid,item in group.get('items',{}).items():
-            problem=item.get('prompt') or item.get('q')
-            if not isinstance(problem,str) or not problem:continue
-            answer=group.get('answers',{}).get(eid)
-            facts={'submitted':answer is not None,'correct':answer.get('correct') if answer else None,'student_work_saved':False}
-            analysis=_exercise_analysis(item,problem,facts)
-            source=_context('quiz:'+qid+':'+eid,'quiz','检验练习',problem,item.get('verification',{}),facts,analysis)
-            source['_quiz']={'quiz_id':qid,'exercise_id':eid,'source_wrong_card_ids':group.get('source_wrong_card_ids',[])}
-            rows.append(source)
     grouped=[[row for row in rows if row['kind']==kind] for kind in ('card','practice','quiz')]
     return [group[index] for index in range(max(map(len,grouped),default=0)) for group in grouped if index<len(group)][:20]
+
+
+def _valid_ai_parent(value,item):
+    if item.get('grading')!='ai_reference':return True
+    from . import ai_extension
+    parent=value['wrong_cards'].get(item.get('source_card_id'))
+    matching=item.get('matching') or {}
+    return bool(parent and matching.get('version')==ai_extension.VERSION and matching.get('source_fingerprint')==ai_extension.fingerprint(parent))
 
 
 def _exercise_analysis(item,problem,facts):
     from .quiz import RULES
     from .pipeline import diagnose
-    target=str(item.get('answer_latex') or item.get('a') or item.get('expected') or '')
+    unverified=(item.get('verification') or {}).get('level') in ('unverified','ai_review') or item.get('grading')=='ai_reference'
+    target='' if unverified else str(item.get('answer_latex') or item.get('a') or item.get('expected') or '')
+    reference=str(item.get('reference_answer') or target)
     # Algebra templates have an existing independent checker. No new AI grading.
     if not item.get('grading') or item.get('grading')=='algebra':
         checked=diagnose(item.get('q') or problem,[])
@@ -88,8 +90,8 @@ def _exercise_analysis(item,problem,facts):
             return result
     hints=item.get('hints')
     if not isinstance(hints,list) or len(hints)!=3:
-        hints=['先找出题目给出的条件，以及现在要解决的问题。',RULES.get(item.get('kp'),'把条件对应到学过的规则，先写一个可以检查的中间步骤。'), '请对照题目条件检查每一步。'+('保存的参考结果是：'+target if target else '')]
-    return {'problem':problem,'steps':[],'status':'not_attempted','question_type':'other','verification':copy.deepcopy(item.get('verification') or {'level':'verified','label':'服务端保存的练习'}),
+        hints=['先找出题目给出的条件，以及现在要解决的问题。',RULES.get(item.get('kp'),'把条件对应到学过的规则，先写一个可以检查的中间步骤。'), '请对照题目条件检查每一步。'+(('AI生成的参考结果（尚未独立核验）是：' if unverified else '保存的参考结果是：')+reference if reference else '')]
+    return {'problem':problem,'steps':[{'i':1,'text':facts['student_answer'],'ok':None}] if facts.get('student_answer') else [],'status':'ai_review' if facts.get('student_answer') else 'not_attempted','question_type':'other','verification':copy.deepcopy(item.get('verification') or {'level':'verified','label':'服务端保存的练习'}),
             'engine':'junior','hints':copy.deepcopy(hints),'target_latex':target,'target':target,'knowledge_ids':[item.get('kp')] if item.get('kp') else []}
 
 
@@ -110,6 +112,10 @@ def contexts(student,body):
 
 
 def _owned_source(student,identity,revision):
+    if identity.startswith('practice:'):
+        from . import store
+        value=store.read(student);item=value['exercises'].get(identity.split(':',1)[1])
+        if item and not _valid_ai_parent(value,item):raise DomainError('SOURCE_CHANGED','原题已更新，请重新生成练习并刷新题目列表。',409)
     source=next((row for row in _sources(student) if row['source_id']==identity),None)
     if source is None:raise DomainError('SOURCE_NOT_FOUND','没有找到这道本人题目，请刷新题目列表重新选择。',404)
     if source['source_revision']!=revision:raise DomainError('SOURCE_CHANGED','题目或练习记录已更新，请刷新列表重新选择后继续。',409)
@@ -128,7 +134,7 @@ def conversation(student,body):
     allowed={'student','question','history','source_id','source_revision','level'}
     if set(body)-allowed:raise ValueError('对话请求含不支持的字段。')
     question=body.get('question');history=_history(body.get('history',[]));level=body.get('level',1)
-    if not isinstance(question,str) or not question.strip() or len(question)>500:raise ValueError('请用一句简短的话提问，最多500字。')
+    if not isinstance(question,str) or not question.strip() or len(question)>300:raise ValueError('请用一句简短的话提问，最多300字。')
     if type(level) is not int or level not in (1,2,3):raise ValueError('请选择一个提示级别。')
     identity=body.get('source_id') or '';revision=body.get('source_revision') or '';source=None
     if not isinstance(identity,str) or not isinstance(revision,str) or len(identity)>160 or len(revision)>64:raise ValueError('请重新选择要讨论的题目。')
@@ -137,15 +143,17 @@ def conversation(student,body):
         source=_owned_source(student,identity,revision)
         analysis=copy.deepcopy(source['_analysis'])
         analysis['teaching_memory']={'records':[],'practice_facts':source['facts'],'source_problem':source['problem'],'instruction':'只引用这些已保存事实，未保存原作答不能编造；这里没有新的数学判定。'}
-        if source['kind']=='quiz':
-            group=source['_quiz'];saved=store.read(student)
-            card=next((saved['wrong_cards'].get(key) for key in group['source_wrong_card_ids'] if saved['wrong_cards'].get(key)),None)
-            if card is None:raise DomainError('SOURCE_NOT_FOUND','这道检验题的来源已不可用，请重新选择。',404)
-            quiz.hint(student,{**{key:group[key] for key in ('quiz_id','exercise_id')},'diagnosis_id':card['diagnosis_id'],'level':level})
         teacher=junior.chat if analysis.get('engine')=='junior' else ai.tutor
         result=teacher(analysis,question.strip(),level,[{'role':turn['role'],'content':turn['content'][:500]} for turn in history])
-        # This endpoint is for spoken guidance, not a new unvalidated equation channel.
-        reply=result['reply'];meta=result.get('meta',{});fallback=bool(result.get('fallback'))
+        reply=result['reply'];spoken=reply;meta=result.get('meta',{});fallback=bool(result.get('fallback'))
+        # The teacher already checked these equalities; only full explanations expose them.
+        if level==3:
+            equations=result.get('equations',[])
+            lines=[r'\('+eq['left']+' = '+eq['right']+r'\)' for eq in equations
+                   if isinstance(eq,dict) and all(isinstance(eq.get(k),str) and 0<len(eq[k])<=500 for k in ('left','right'))][:2]
+            if lines:
+                reply+='\n\n'+'\n\n'.join(lines)
+                spoken=spoken[:570]+' 完整算式已显示在文字中。'
         _owned_source(student,identity,revision)  # Recheck after slow model calls.
     else:
         if revision:raise ValueError('请先选择对应的题目。')
@@ -153,6 +161,7 @@ def conversation(student,body):
         raw,meta=ai.complete('tutor',messages,limit=600)
         reply=raw.get('reply');fallback=False
         if not isinstance(reply,str) or not 0<len(reply)<=600 or re.search(r'<[/a-zA-Z]|\x00',reply):raise ai.ModelError('这次回复没有准备完整，请重试或换一句话提问。','MODEL_OUTPUT_INVALID')
+    if not identity:spoken=reply
     language='zh' if re.search(r'[\u3400-\u9fff]',reply) else 'en'
-    return {'ok':True,'reply':reply,'description':reply,'speech_text':reply[:600],'language':language,
+    return {'ok':True,'reply':reply,'description':reply,'speech_text':spoken[:600],'language':language,
             'source':_public_context(source) if source else None,'verification':{'level':'ai_review','label':'AI辅助讲解，不作为新的判题结果'},'fallback':fallback,'meta':meta}

@@ -9,7 +9,7 @@ from test_multiocr import item,raw_page
 
 VALID={'hints':{'level_1':'先回忆确定事件的定义。','level_2':'注意必然发生和不可能发生都属于确定事件。','level_3':'三角形内角和为180度，内角和为360度是不可能事件，因此选择D。'},
  'card':{'title':'事件分类','body':'确定事件包括必然事件与不可能事件，随机事件的结果不能事先确定。','tip':'注意不可能事件也属于确定事件。'},'answer_latex':'D','assessment':'尚未作答','knowledge_ids':['P1']}
-BODY={'problem':'下列事件是确定事件的是？A明天下雨 B抛硬币正面 C抽中红球 D三角形内角和360度','steps':[], 'recognition':{'question_type':'probability','topic_id':'P1'}}
+BODY={'problem':'说明确定事件和随机事件的区别。','steps':[], 'recognition':{'question_type':'probability','topic_id':'P1'}}
 
 class TeachingOutputTests(unittest.TestCase):
  def test_explicit_levels_are_ordered_by_key_not_json_insertion(self):

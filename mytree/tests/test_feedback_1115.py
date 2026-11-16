@@ -16,16 +16,22 @@ class FeedbackTests(unittest.TestCase):
     for item in items:
      self.assertTrue(quiz._check(item,item['answer_latex']));self.assertFalse(quiz._check(item,'1234567'))
      self.assertEqual(item['matching']['family'],family)
- def test_production_practice_creation_and_submission_for_three_sources(self):
-  cases=[(r'若式子 \(\frac{1}{\sqrt{x-1}}\) 在实数范围内有意义，求x取值范围。','N2'),(r'因式分解：\(a^2-4ab+4b^2\)。','F3'),(r'两个相似三角形的面积比为 \(4:9\)，较小三角形周长100 cm，求另一个周长。','G5'),('数据1750亿用科学计数法表示。','N4')]
+ def test_owned_source_ai_practice_uses_original_without_mastery_writes(self):
+  cases=[('若1/sqrt(x-1)有意义，求x范围。','N2'),('因式分解a^2-4ab+4b^2。','F3'),('相似三角形面积比4:9，小周长100，求另一周长。','G5'),('1750亿用科学计数法表示。','N4')]
+  generated={'items':[{'question':f'合成条件变式{n}，求解。','answer':str(n),'solution':f'使用对应方法得到{n}。','relation':'合成协议夹具','answer_kind':'text'} for n in (1,2,3)]}
   with tempfile.TemporaryDirectory() as d,patch('app.profile._PATH',d+'/profiles.json'):
    for index,(problem,kp) in enumerate(cases):
-    owner='case'+str(index);record=profile.record(owner,{'problem':problem,'status':'not_attempted','lesson_kp':kp,'knowledge_ids':[kp]},problem)
-    result=profile.create_exercises(owner,diagnosis_id=record['id']);self.assertEqual(len(result['items']),3)
+    owner='case'+str(index)
+    store.update(owner,lambda p:p['wrong_cards'].update(source={'id':'source','diagnosis_id':'diag','problem':problem,'knowledge_ids':[kp]}))
+    before=store.read(owner)
+    with patch('app.ai.complete',return_value=(generated,{})) as call:result=profile.create_exercises(owner,diagnosis_id='diag')
+    self.assertEqual(len(result['items']),3);self.assertIn(problem,call.call_args.args[1][-1]['content'])
     for public in result['items']:
-     item=store.read(owner)['exercises'][public['id']]
-     self.assertFalse(profile.submit_answer(owner,item['id'],'1234567')['correct'])
-     self.assertTrue(profile.submit_answer(owner,item['id'],item['answer_latex'])['correct'])
+     self.assertNotIn('reference_answer',public)
+     with patch('app.ai.complete',return_value=({'feedback':'请核对条件。'},{})):
+      self.assertIsNone(profile.submit_answer(owner,public['id'],'1')['correct'])
+    after=store.read(owner)
+    for key in ('lit','kp_correct','practice_correct','events','reviews','quiz_answers'):self.assertEqual(before[key],after[key])
  def test_source_geometry_rejects_wrong_endpoints_and_coefficients(self):
   line={'type':'numberline','x':8,'y':55,'w':84,'min':-2,'max':5,'left':1,'right':None,'left_open':False,'right_open':True,'color':1,'label':'x≥1'}
   spec={'title':'定义域','steps':[{'caption':'根式限制','shapes':[line]},{'caption':'分母限制','shapes':[{**line,'left_open':True,'label':'x>1'}]}]}
@@ -93,7 +99,7 @@ class FeedbackTests(unittest.TestCase):
    record=profile.record('triangle',{'problem':problem,'status':'not_attempted','lesson_kp':'G5','knowledge_ids':['G5'],'hints':['方向','关键','完整']},problem)
    with patch('app.ai.complete',return_value=(spec,{})) as model:
     first=visual.diagram_lesson('triangle',{'diagnosis_id':record['id']});second=visual.diagram_lesson('triangle',{'diagnosis_id':record['id']})
-   self.assertEqual(model.call_count,1);self.assertEqual(first,second);self.assertIn('data-source-form="triangle"',second['steps'][0]['svg'])
+   self.assertEqual(model.call_count,0);self.assertEqual(first,second);self.assertEqual(second['rendering'],'stored_text_solution');self.assertEqual(second['problem'],problem);self.assertIn('完整',str(second['steps']))
  def test_numberline_svg_and_text_only_rejection(self):
   line={'type':'numberline','x':8,'y':55,'w':84,'min':-2,'max':5,'left':1,'right':None,'left_open':True,'right_open':True,'color':1,'label':'x>1'}
   spec={'title':'定义域','steps':[{'caption':'根式与分母限制','shapes':[line]}]*2};valid=visual.validate_diagram(spec);svg=visual.diagram_svg(valid['steps'][0],valid['title']);self.assertIn('data-open="true"',svg);self.assertIn('data-numberline',svg)

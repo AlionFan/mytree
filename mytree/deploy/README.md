@@ -40,3 +40,9 @@
 当前运行版本 `mytree-official-speech-20261115T164637Z`，相对Mem0生产基线仅改变ai.py/speech.py/mem0_adapter.py/explorer.js四文件，未混网页练习和解题讲解的并行工作。官方模型与27个AI字段在Astra最终清单229eef独验后更新；其他私有配置含TEST_PROFILE保留。375发布文件/373容器源逐SHA通过，真实生产ASR、可信HTTPS鉴权、隔离合成记忆实际容器重启验证通过，未写正式账号学习记录。
 
 本批使用 `docs/evidence/speech-capture/prepare_release.py` 按线上SHA重建公开基线、`prepare_private.py` 只生成AI字段私有delta，`publish_release.py` 先暂存构建并在生产网络预飞六接口，再原子切换，失败恢复前一runtime与容器。私有文件不入公开包；已验证来源与运行回执在同目录。上面的deploy.sh为早期全量发布流程，尚未迁移至本批独立角色配置导出与保留线上原私有字段的流程；后续发布沿用已验隔离基线及串行窗口，避免用旧脚本覆盖新配置。
+
+## 版本保留规则（用户2026-11-16明确要求）
+
+每次串行发布在健康、公网鉴权和运行源SHA确认通过后，仅保留当前已激活版本及它的上一有效回滚版本。清理范围是本应用 `/srv/data/mytree/releases` 的旧版本目录、`mytree:<release>` 旧Docker镜像及对应上传暂存包；不得清理 `/srv/data/mytree/data`、`private`、其他应用镜像或仍在运行的预飞候选。不能把未激活的构建时间当成“上一有效版本”。
+
+2026-11-16已执行清理：保留 `mytree-ai-privacy-20261115T171326Z` 与 `mytree-practice-solution-20261115T170553Z`，删除34旧源码目录、33旧镜像及9暂存文件，剩余恰好两版且当前healthy。计划/执行清单与可重复的显式plan/apply工具见 `docs/evidence/reconcile-1116/cleanup_versions.py`、`cleanup-plan.json`、`cleanup-apply.json`。后续发布须使用新的实际current/previous重新执行，不使用这两个历史标识硬编码清理。

@@ -1,21 +1,25 @@
-/* Camera-independent voice tutor: scoped to this workspace only. */
-#explorer-voice-layout{display:flex;flex:1;flex-direction:column;gap:12px;min-height:0;overflow:auto;overscroll-behavior:contain;padding-bottom:8px}
-#explorer-voice-layout .voice-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;flex-shrink:0;padding:14px}
-#explorer-voice-layout .voice-settings label{margin:0;font-size:12px;min-width:0}
-#explorer-voice-layout .voice-settings select{display:block;width:100%;min-width:0;min-height:44px;margin:4px 0 0;font-size:13px}
-#explorer-current-source,#explorer-source-note{grid-column:1/-1;margin:0!important;font-size:12px}
-#explorer-current-source summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
-#explorer-source-detail{max-height:160px;overflow:auto;padding:8px 0;font-size:14px}
-#explorer-source-refresh{align-self:end;min-height:44px;font-size:12px}
-#explorer-voice-layout .explorer-layout{flex:none;min-height:300px}
-#explorer-voice-layout .explorer-layout>.panel{height:auto;min-height:0;overflow:visible}
-#explorer-voice-layout .explorer-controls{display:flex;flex-wrap:wrap;gap:8px}
-#explorer-voice-layout .explorer-controls>button{flex:1 1 120px;min-width:100px;min-height:44px;white-space:normal}
-#explorer-voice-layout .camera-stage{min-height:150px;max-height:300px;aspect-ratio:4/3;flex:none}
-#explorer-voice-layout .explorer-history{flex:none;max-height:230px;overflow:auto}
-#explorer-voice-layout .explorer-caption{max-height:220px;font-size:18px}
-#explorer-voice-layout #explorer-question{min-height:72px;width:100%;box-sizing:border-box}
-#explorer-voice-layout .explorer-conversation>.source-tag{display:block}
-#explorer-voice-layout #explorer-allowance{font-size:12px;margin:0}
-@media(max-width:1050px){#explorer-voice-layout .explorer-layout{display:flex;flex-direction:column;gap:12px}#explorer-voice-layout .explorer-layout>.panel{width:100%;box-sizing:border-box}}
-@media(max-height:700px){#explorer-voice-layout{gap:8px}#explorer-voice-layout .voice-settings{padding:10px}#explorer-voice-layout .explorer-controls>button{flex-basis:100px;font-size:12px;padding:8px}#explorer-source-note{line-height:1.4}}
+/* The camera and readable transcript stay together in either exploration mode. */
+#explorer-voice-layout.explorer-studio{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,1fr);flex:1;min-height:0;gap:14px;overflow:hidden;padding-bottom:8px}
+.explorer-studio>.panel{min-width:0;min-height:0;margin:0}
+.explorer-studio .explorer-camera-panel{display:flex;flex-direction:column;padding:16px;gap:10px;overflow:auto}
+.explorer-studio .camera-stage{position:relative;display:block;flex:1;min-height:220px;background:#e9eee9;border:1px solid #d5dfd4;border-radius:22px;overflow:hidden}
+.explorer-studio .camera-stage video{width:100%;height:100%;object-fit:contain;position:absolute;inset:0;background:#17251f}
+.explorer-studio #explorer-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#f1f5ed;color:#294535;padding:24px;text-align:center}
+.explorer-studio #explorer-overlay svg{width:64px;height:64px;fill:none;stroke:currentColor;stroke-width:2}.explorer-studio #explorer-overlay strong{font-size:clamp(22px,2.5vw,34px)}.explorer-studio #explorer-overlay span{font-size:14px}
+.explorer-studio .explorer-mode-actions{display:flex;justify-content:center;gap:12px;flex-shrink:0}.explorer-studio .explorer-mode-actions button{width:min(240px,48%);min-height:52px;font-size:17px}.explorer-studio .explorer-mode-actions button[aria-pressed=true]{background:#263f33;color:white;border-color:#263f33}
+.explorer-studio #explorer-state{margin:0;padding:4px 8px;min-height:26px;text-align:center;font-size:12px;flex-shrink:0}.explorer-studio #explorer-allowance{margin:0;text-align:center;font-size:11px;flex-shrink:0}
+.explorer-studio .explorer-conversation{display:flex;flex-direction:column;gap:10px;overflow:hidden;padding:18px}
+.explorer-studio .transcript-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0}.explorer-studio .transcript-heading h2{font-size:20px;margin:0}.explorer-studio .transcript-heading .source-tag{font-size:11px;white-space:nowrap}
+.explorer-studio .voice-settings{border-bottom:1px solid #e3e7de;padding-bottom:6px;font-size:13px;max-height:38%;overflow:auto;flex-shrink:0}.explorer-studio .voice-settings>summary{cursor:pointer;min-height:44px;padding:10px 0}.explorer-studio .voice-settings label{display:inline-block;width:48%;vertical-align:top;padding:6px;font-size:12px}.explorer-studio .voice-settings select{width:100%;min-width:0;min-height:44px}.explorer-studio #explorer-source-detail{max-height:130px;overflow:auto}.explorer-studio #explorer-source-note{font-size:12px}
+.explorer-studio .explorer-history{flex:1;min-height:80px;max-height:none;overflow:auto;overscroll-behavior:contain;overflow-wrap:anywhere;padding:4px 5px 12px;scrollbar-gutter:stable}
+.explorer-studio .explorer-turn{padding:14px;margin:0 0 12px;border:1px solid #e1e7dc;border-radius:16px;background:#f5f8f0;min-width:0;max-width:100%}.explorer-studio .explorer-turn.user{margin-left:16px;background:#fffdf4;border-color:#eee7cc}.explorer-studio .explorer-turn .source-tag{margin:0 0 6px;font-size:11px}.explorer-studio .explorer-turn .math-prose{font-size:16px;line-height:1.8}.explorer-studio .explorer-turn .math-prose p{margin:5px 0}.explorer-studio .explorer-turn math{max-width:100%}.explorer-studio .explorer-turn .native-display{overflow-x:auto;max-width:100%}.explorer-studio .transcript-context{text-align:center;color:#657468;font-size:11px;border-top:1px dashed #dce4d5;padding-top:10px}.explorer-studio .transcript-empty{font-size:15px;line-height:1.9;color:#6a7569;padding:12px}
+.explorer-studio #explorer-question{width:100%;min-height:60px;max-height:100px;margin:0;font-size:14px}.explorer-studio .explorer-conversation form{margin:0;flex-shrink:0}.explorer-studio #explorer-mic-level{font-size:12px;text-align:center;flex-shrink:0}
+@media(max-width:800px){
+ #explorer-voice-layout.explorer-studio{display:flex;flex-direction:column;overflow:auto;gap:10px}
+ .explorer-studio .explorer-camera-panel{flex:0 0 auto;padding:10px;gap:6px;overflow:visible}
+ .explorer-studio .camera-stage{flex:none;min-height:140px;height:clamp(140px,23dvh,210px)}
+ .explorer-studio .explorer-conversation{flex:1 0 290px;min-height:290px;padding:12px;gap:6px}
+ .explorer-studio .explorer-mode-actions button{min-height:46px;font-size:16px}.explorer-studio #explorer-state{font-size:11px;min-height:22px}.explorer-studio #explorer-allowance{font-size:10px}
+ .explorer-studio .transcript-heading h2{font-size:17px}.explorer-studio .voice-settings label{width:100%;padding:4px 0}.explorer-studio .voice-settings{max-height:150px}.explorer-studio .explorer-history{min-height:100px}.explorer-studio .explorer-turn{padding:10px}.explorer-studio .explorer-turn .math-prose{font-size:15px}.explorer-studio #explorer-question{min-height:48px}
+}
+@media(max-height:500px) and (min-width:801px){#explorer-voice-layout.explorer-studio{overflow:auto;grid-auto-rows:minmax(330px,1fr)}.explorer-studio .camera-stage{min-height:150px}.explorer-studio .explorer-mode-actions button{min-height:44px}.explorer-studio .explorer-camera-panel{padding:10px;gap:5px}}

@@ -10,7 +10,7 @@ from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import ai, profile, junior, agent, cards, contract, review, explorer, speech, access, quiz, card_learning, auth, page_reading, question_search, visual, family, teaching_memory, personal_review, parent_access, billing
+from . import ai, profile, junior, agent, cards, contract, review, explorer, speech, access, quiz, card_learning, auth, page_reading, question_search, visual, family, teaching_memory, personal_review, parent_access, billing, uploads
 from .errors import DomainError
 from .reading_registry import registry as readings, ConfirmationError, new_id
 from .knowledge import CAUSES
@@ -23,7 +23,7 @@ STATIC = os.path.join(HERE, '..', 'web')
 MAX_BODY = 6_100_000
 MAX_STEPS = 12
 STUDENT_RE = re.compile(r'^[A-Za-z0-9_-]{1,64}$')
-PAGES = {'/', '/tree', '/parent', '/plan','/explore'}
+PAGES = {'/', '/tree', '/parent', '/plan','/explore','/uploads'}
 
 
 @lru_cache(maxsize=48)
@@ -100,7 +100,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
             raise ValueError('请发送 JSON 格式的请求')
         n = int(self.headers.get('Content-Length') or 0)
-        limit = 28_100_000 if urlparse(self.path).path == '/api/files/preview' else MAX_BODY
+        limit = 28_100_000 if urlparse(self.path).path == '/api/files/preview' else 14_100_000 if urlparse(self.path).path=='/api/uploads' else MAX_BODY
         if n>limit and urlparse(self.path).path=='/api/recognize/page':raise DomainError('PAYLOAD_TOO_LARGE','图片太大，请降低分辨率后重试。',413)
         if n <= 0 or n > limit:
             raise ValueError('请求内容为空或太大')
@@ -184,6 +184,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path=='/_ready':return self._json(200,{'ok':True})
         u = urlparse(self.path)
+        if u.path=='/mail-hero.jpg':return self._file('mail-hero.jpg','image/jpeg')
         if u.path in ('/privacy','/privacy.html'):return self._file('privacy.html','text/html; charset=utf-8')
         if auth.enabled() and u.path in ('/admin/login','/admin-login.js','/admin.js'):
             filename='admin-login.html' if u.path=='/admin/login' else u.path[1:]
@@ -197,7 +198,7 @@ class Handler(BaseHTTPRequestHandler):
             except (auth.AuthError, OSError, auth.sqlite3.Error):return self._json(503,{'error':'管理服务暂不可用。'})
         if u.path=='/api/billing/catalog':return self._json(200,billing.catalog())
         # Public presentation only; learning pages and APIs retain account checks.
-        if u.path in ('/welcome','/pricing','/commerce-guide-2.jpg','/commerce-guide-3.jpg','/commerce-mobile.jpg','/commerce.css','/pricing.js','/home.css','/home.js','/youth.css','/character.js','/guide-1.png','/guide-2.png','/guide-3.png','/guide-real-capture.jpg','/guide-connected-tree.jpg','/home-entry.css','/home-fonts.css'):
+        if u.path in ('/welcome','/pricing','/commerce-guide-2.jpg','/commerce-guide-3.jpg','/commerce-mobile.jpg','/commerce.css','/pricing.js','/home.css','/home.js','/youth.css','/character.js','/guide-1.png','/guide-2.png','/guide-3.png','/guide-real-capture.jpg','/guide-connected-tree.jpg','/home-entry.css','/home-fonts.css','/home-thinking.js'):
             filename = 'home.html' if u.path=='/welcome' else 'pricing.html' if u.path=='/pricing' else u.path[1:]
             return self._file(filename,(mimetypes.guess_type(filename)[0] or 'application/octet-stream')+'; charset=utf-8')
         if u.path.startswith('/fonts/'):
@@ -216,6 +217,17 @@ class Handler(BaseHTTPRequestHandler):
             ctype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
             return self._file(filename, ctype+'; charset=utf-8')
         if not self._identity():return
+        if u.path=='/uploads':return self._file('uploads.html','text/html; charset=utf-8')
+        if u.path in ('/uploads.js','/uploads-capture.js','/uploads.css'):
+            return self._file(u.path[1:],'text/css; charset=utf-8' if u.path.endswith('.css') else 'text/javascript; charset=utf-8')
+        if u.path=='/api/uploads' or re.fullmatch(r'/api/uploads/[a-f0-9]{32}/(?:image|thumb)',u.path):
+            try:
+                owner=self._student(None)
+                if u.path=='/api/uploads':return self._json(200,uploads.listing(owner,parse_qs(u.query).get('page',['1'])[0]))
+                data,mime,extension=uploads.image(owner,u.path.split('/')[3],u.path.endswith('/thumb'))
+                return self._send(200,data,mime,{'Cache-Control':'no-store'})
+            except DomainError as error:return self._json(error.status,{'error':str(error),'code':error.code})
+            except OSError:return self._json(503,{'error':'上传记录暂时无法读取。','code':'UPLOAD_STORAGE_FAILED'})
         if u.path=='/api/billing/me':
             if not self.account:return self._json(401,{'error':'请登录学习账号。'})
             try:return self._json(200,billing.overview(self.account['profile_id']))
@@ -239,9 +251,9 @@ class Handler(BaseHTTPRequestHandler):
             except (OSError, auth.sqlite3.Error):return self._json(503,{'error':'家庭记录暂不可用，请稍后重试。'})
         if u.path in PAGES:
             return self._file('index.html', 'text/html; charset=utf-8')
-        if u.path in ('/account.js', '/app.js', '/math-ui.js', '/learning-ui.js','/explorer.js','/focus-ui.js','/diagrams.js', '/family.js', '/parent.css', '/style.css', '/favicon.svg'):
+        if u.path in ('/account.js', '/app.js', '/math-ui.js', '/learning-ui.js','/explorer.js','/explorer-voice.css','/focus-ui.js','/diagrams.js', '/family.js', '/parent.css', '/style.css', '/favicon.svg'):
             ctype = {'/parent.css':'text/css; charset=utf-8','/family.js':'text/javascript; charset=utf-8','/account.js':'text/javascript; charset=utf-8', '/app.js': 'text/javascript; charset=utf-8', '/math-ui.js':'text/javascript; charset=utf-8', '/learning-ui.js':'text/javascript; charset=utf-8', '/style.css': 'text/css; charset=utf-8',
-                     '/explorer.js':'text/javascript; charset=utf-8','/focus-ui.js':'text/javascript; charset=utf-8','/diagrams.js':'text/javascript; charset=utf-8','/favicon.svg': 'image/svg+xml'}[u.path]
+                     '/explorer-voice.css':'text/css; charset=utf-8','/explorer.js':'text/javascript; charset=utf-8','/focus-ui.js':'text/javascript; charset=utf-8','/diagrams.js':'text/javascript; charset=utf-8','/favicon.svg': 'image/svg+xml'}[u.path]
             return self._file(u.path[1:], ctype)
         if u.path.startswith('/vendor/'):
             base=Path(STATIC,'vendor').resolve();target=Path(STATIC,u.path.lstrip('/')).resolve()
@@ -267,18 +279,7 @@ class Handler(BaseHTTPRequestHandler):
             try:return self._json(200,review.today(student))
             except OSError:return self._json(503,{'error':'复习安排暂时无法读取','code':'STORAGE_FAILED'})
             except (ValueError,TypeError):return self._json(400,{'error':'复习设置需要核对','code':'INVALID_INPUT'})
-        if u.path=='/api/quiz/lesson':
-            try:
-                lesson_query=parse_qs(u.query,keep_blank_values=True)
-                if any(len(items)!=1 for items in lesson_query.values()):raise ValueError('讲解查询参数不能重复。')
-                params={key:items[0] for key,items in lesson_query.items()}
-                contract.definition('QuizLessonQuery',params)
-                student=self._student(params.get('student'))
-                if student is None:raise ValueError('档案编号格式不正确。')
-                return self._json(200,quiz.lesson(student,params['source_wrong_card_id'],params['knowledge_id']))
-            except DomainError as error:return self._json(error.status,{'error':str(error),'code':error.code})
-            except (ValueError,TypeError):return self._json(400,{'error':'知识讲解查询字段不正确，请重新选择来源卡片。','code':'INVALID_INPUT'})
-            except OSError:return self._json(503,{'error':'知识讲解暂时无法读取，请重试。','code':'STORAGE_FAILED'})
+        if u.path=='/api/quiz/lesson':return self._json(410,{'error':'三题检验已停用，请使用巩固练习。','code':'FEATURE_RETIRED'})
         if u.path == '/api/cards':
             student=self._student((q.get('student') or [None])[0])
             if student is None:return self._json(400,{'error':'学生编号格式不对','code':'INVALID_INPUT'})
@@ -333,6 +334,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._auth_post(path)
             if not self._identity():return
             body = self._body()
+            if path in ('/api/uploads','/api/uploads/delete','/api/uploads/link'):
+                action={'/api/uploads':uploads.save,'/api/uploads/delete':uploads.delete,'/api/uploads/link':uploads.link}[path]
+                return self._json(200,action(self._student(None),body))
             if path=='/api/billing/selection':
                 if not self.account:return self._json(401,{'error':'请登录学习账号。'})
                 return self._json(200,billing.selection(self.account['profile_id'],body))
@@ -384,7 +388,10 @@ class Handler(BaseHTTPRequestHandler):
                 if not self.account:return self._json(200,{'ok':True})
                 return self._json(200,billing.cancel_explorer(student,body))
             if path=='/api/explorer/contexts':return self._json(200,explorer.contexts(student,body))
-            if path=='/api/explorer/conversation':return self._json(200,explorer.conversation(student,body))
+            if path=='/api/explorer/conversation':
+                result=explorer.conversation(student,body)
+                if auth.enabled() and not auth.session(self.headers.get('Cookie')):return self._json(401,{'error':'登录已退出，请重新登录。','code':'AUTH_REQUIRED'})
+                return self._json(200,result)
             if path=='/api/explorer/observe':return self._json(200,explorer.metered_observe(student,body))
             if path == '/api/agent':
                 result,code=agent.handle(body)

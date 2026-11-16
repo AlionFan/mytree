@@ -147,12 +147,16 @@ class AuthTests(unittest.TestCase):
             status,result,_=self.req('/api/agent',envelope(operation,{},a['profile_id']),cookie=ca)
             self.assertEqual(status,200,result)
         status,result,_=self.req('/api/agent',envelope('quiz.start',{'knowledge_id':'F2','source_wrong_card_ids':[card['id']]},a['profile_id']),cookie=ca)
-        self.assertEqual(status,200,result);self.assertEqual(len(result['output']['items']),3)
+        self.assertEqual(status,422,result);self.assertEqual(result['error']['code'],'UNSUPPORTED')
         status,result,_=self.req('/api/agent',request,cookie=cb)
         self.assertEqual(status,200,result);self.assertFalse(result['output']['items'])
         request=envelope('quiz.start',{'knowledge_id':'F2','source_wrong_card_ids':[card['id']]},a['profile_id'])
         status,result,_=self.req('/api/agent',request,cookie=cb)
-        self.assertEqual(status,404,result);self.assertFalse(store.read(b['profile_id'])['quizzes'])
+        self.assertEqual(status,422,result);self.assertFalse(store.read(b['profile_id'])['quizzes'])
+        status,result,_=self.req('/api/hint',{'diagnosis_id':card['diagnosis_id'],'level':1},cookie=ca)
+        self.assertEqual(status,200,result)
+        status,result,_=self.req('/api/hint',{'diagnosis_id':card['diagnosis_id'],'level':1},cookie=cb)
+        self.assertNotEqual(status,200,result);self.assertFalse(store.read(b['profile_id'])['hint_views'])
         # Even a malicious extra top-level student remains a contract error.
         request=envelope('card.list',{'type':'wrong','limit':10},a['profile_id']);request['student']=a['profile_id']
         self.assertEqual(self.req('/api/agent',request,cookie=ca)[0],400)

@@ -20,14 +20,45 @@ def fingerprint(source):
     return hashlib.sha256(json.dumps(fields,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
 
-def generate(source):
-    problem=source.get('problem','')
-    if not text(problem,10000):raise DomainError('INVALID_INPUT','请先核对并保存完整原题。')
-    data,meta=ai.complete('tutor',[{'role':'system','content':PROMPT},{'role':'user','content':json.dumps({'problem':problem,'knowledge_ids':source.get('knowledge_ids',[]),'student_steps':source.get('student_steps',[])},ensure_ascii=False)}],limit=4200)
-    items=data.get('items')
+def _value(value):
+    if isinstance(value,str):return value.strip()
+    if type(value) in (int,float):
+        import math
+        return str(value) if math.isfinite(value) else ''
+    if isinstance(value,list) and value and all(isinstance(v,str) for v in value):return '\n'.join(value)
+    if isinstance(value,dict):
+        for key in ('text','latex','value','steps'):
+            if key in value:return _value(value[key])
+    return ''
+
+
+def _field(row,*names):
+    for name in names:
+        if name in row:
+            value=_value(row[name])
+            if value:return value
+    return ''
+
+
+def _validate_output(data,meta,source):
+    problem=source['problem']
+    items=next((data[k] for k in ('items','exercises','questions') if isinstance(data.get(k),list)),None)
     if not isinstance(items,list) or len(items)!=3:raise DomainError('AI_EXERCISE_INCOMPLETE','这组延伸练习还没生成完整，请再试一次。',502)
     output=[]
-    for row in items:
+    for original in items:
+        row=dict(original) if isinstance(original,dict) else {}
+        row.update(question=_field(row,'question','question_md','prompt','stem'),
+                   relation=_field(row,'relation','match_reason','connection') or '围绕原题考点的同类练习。',
+                   answer=_field(row,'answer','answer_latex','reference_answer','correct_answer'),
+                   solution=_field(row,'solution','reference_solution','explanation','worked_steps','analysis'))
+        options=row.get('options',row.get('choices'))
+        if isinstance(options,list) and len(options)==4 and all(isinstance(v,str) for v in options):options=dict(zip('ABCD',options))
+        if isinstance(options,dict):row['options']=options
+        kind=row.get('answer_kind',row.get('type',''))
+        row['answer_kind']='choice' if options or kind in ('choice','multiple_choice','single_choice') else 'text'
+        if row['answer_kind']=='choice':
+            answer=re.fullmatch(r'(?:(?:选择|选项|答案为|答案是|答案[:：])\s*)?([A-D])[.。]?',row['answer'].strip())
+            if answer:row['answer']=answer[1]
         if not isinstance(row,dict) or not all(text(row.get(k),n) for k,n in [('question',2400),('relation',500),('answer',1200),('solution',2400)]):
             raise DomainError('AI_EXERCISE_INCOMPLETE','这组练习缺少完整条件或参考解法，请再试一次。',502)
         if row.get('answer_kind') not in ('choice','text'):raise DomainError('AI_EXERCISE_INCOMPLETE','练习作答格式不完整，请重试。',502)
@@ -46,6 +77,26 @@ def generate(source):
     if len({r['question'] for r in output})!=3 or any(r['question'].strip()==problem.strip() for r in output):
         raise DomainError('AI_EXERCISE_INCOMPLETE','这组变式重复了，请重新生成。',502)
     return output
+
+
+def generate(source):
+    problem=source.get('problem','')
+    if not text(problem,10000):raise DomainError('INVALID_INPUT','请先核对并保存完整原题。')
+    messages=[{'role':'system','content':PROMPT},{'role':'user','content':json.dumps({'problem':problem,'knowledge_ids':source.get('knowledge_ids',[]),'student_steps':source.get('student_steps',[])},ensure_ascii=False)}]
+    for attempt in range(2):
+        try:
+            data,meta=ai.complete('tutor',messages,limit=5400 if not attempt else 6400)
+            return _validate_output(data,meta,source)
+        except DomainError as error:
+            if error.code!='AI_EXERCISE_INCOMPLETE' or attempt:raise
+            # One bounded repair: never invent a missing solution in application code.
+            brief={k:data.get(k) for k in ('items','exercises','questions') if k in data}
+            raw=json.dumps(brief,ensure_ascii=False)
+            if len(raw)<=26000:messages.append({'role':'assistant','content':raw})
+            messages.append({'role':'user','content':'上次输出未满足完整练习结构。请依据同一原题重新输出完整3题JSON，必须逐题给question、answer、solution，relation可简短。选择题options用A/B/C/D字典，answer仅一个字母。不要只返回补丁，不要省略解法。错误：'+str(error)})
+        except ai.ModelError as error:
+            if getattr(error,'code',None)!='MODEL_OUTPUT_TRUNCATED' or attempt:raise
+            messages.append({'role':'user','content':'上次输出被截断。请压缩篇幅重新给完整3题JSON，每题解法不超过150字，所有必填字段保持完整。'})
 
 
 def feedback(item,answer):

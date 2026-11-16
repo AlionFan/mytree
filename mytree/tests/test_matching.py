@@ -62,12 +62,13 @@ class MatchingTests(unittest.TestCase):
   self.source()
   with self.assertRaises(DomainError) as e:quiz.start('other',{'knowledge_id':'I1','source_wrong_card_ids':['source-card']},'other')
   self.assertEqual(e.exception.status,404);self.assertFalse(store.read('other')['quizzes'])
- def test_ordinary_practice_and_quiz_share_source_matching(self):
-  source=self.source('N1')
-  store.update('owner',lambda v:v['events'].append({'id':'source-diagnosis','type':'diagnosis','cause':'J-N1','problem':SOURCE,'analysis':{'lesson_kp':'N1','knowledge_ids':['N1']}}))
-  ordinary=profile.create_exercises('owner',diagnosis_id=source['diagnosis_id'])
+ def test_ai_practice_receives_owned_original_and_stays_reference_only(self):
+  source=self.source('N1');items=matching.range_items(matching.classify(source,'N1'),2,'ai-fixture')
+  response={'items':[{'question':i['prompt'],'answer':i['answer_latex'],'solution':'；'.join(i['hints']),'relation':'先消元，再求范围','answer_kind':'text'} for i in items]}
+  with patch('app.ai.complete',return_value=(response,{})) as model:ordinary=profile.create_exercises('owner',diagnosis_id=source['diagnosis_id'])
+  self.assertIn(SOURCE,model.call_args.args[1][-1]['content'])
   for item in ordinary['items']:
-   self.assertIn('取值范围',item['question_md']);self.assertIn('先消元',item['match_reason']);self.assertNotIn('answer_latex',item)
+   self.assertIn('取值范围',item['question_md']);self.assertEqual(item['verification']['level'],'unverified');self.assertNotIn('reference_answer',item)
  def test_higher_level_adds_coefficient_and_sign_work(self):
   match=matching.classify(self.source(),'I1')
   self.assertIn('2m-2n=',matching.range_items(match,3,'advanced')[0]['prompt'])
@@ -111,19 +112,12 @@ class MatchingTests(unittest.TestCase):
   self.assertEqual(matching.classify({'problem':'3*x^2+6*x','_analysis':{'problem_latex':r'3x^{2}+6x'}},'F1')['family'],'verified-topic-template')
   for knowledge,raw in [('F2','x^2-9'),('F1','3*x^2+6*x'),('E3','x^2-9=0'),('N2',r'\sqrt{4}+\sqrt{9}')]:
    self.assertEqual(matching.classify({'problem':raw},knowledge)['family'],'verified-topic-template')
- def test_ordinary_r2_r3_use_their_actual_templates_and_grade_correctly(self):
-  for knowledge,problem,cause in [('R2','(x^2-9)/(x^2+6x+9)','R-CANCEL-TERM'),('R3','(3-x)/(x^2-9)','R-SIGN')]:
+ def test_historical_r2_r3_templates_still_grade_correctly(self):
+  for knowledge,problem in [('R2','(x^2-9)/(x^2+6x+9)'),('R3','(3-x)/(x^2-9)')]:
    with self.subTest(knowledge=knowledge):
-    profile._save({});source=self.source(knowledge,problem)
-    store.update('owner',lambda value:value['events'].append({'id':'source-diagnosis','type':'diagnosis','cause':cause,'problem':problem,'analysis':{'lesson_kp':knowledge,'knowledge_ids':[knowledge],'problem_latex':problem}}))
-    items=profile.create_exercises('owner',diagnosis_id=source['diagnosis_id'])['items']
+    source=self.source(knowledge,problem);items=quiz._group(knowledge,1,'historical',matching.classify(source,knowledge))
     self.assertEqual(len(items),3)
-    saved=store.read('owner')['exercises']
-    for item in items:
-     self.assertEqual(saved[item['id']]['matching']['knowledge_id'],knowledge)
-     self.assertTrue(profile.submit_answer('owner',item['id'],saved[item['id']]['answer_latex'])['correct'])
-    if knowledge=='R2':self.assertIn('x^2+',items[0]['q'].split('/')[1])
-    else:self.assertTrue(items[0]['q'].startswith('(') and '-x)' in items[0]['q'])
+    for item in items:self.assertTrue(quiz._check(item,item['answer_latex']))
  def test_downshift_keeps_full_chain_with_visible_scaffold(self):
   match=matching.classify(self.source(),'I1')
   for item in matching.range_items(match,1,'low'):

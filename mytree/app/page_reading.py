@@ -92,7 +92,21 @@ def _fragments(values,unassigned=False):
         if not isinstance(item,dict) or item.get('role') not in ('problem','student_work','teacher_annotation','crossed_out','unknown') or item.get('script_kind') not in ('printed','handwritten','unknown'):raise ValueError('片段角色不正确')
         text=item.get('text')
         if not isinstance(text,str) or not text.strip() or len(text)>2000:raise ValueError('片段内容不正确')
-        row={'role':item['role'],'script_kind':item['script_kind'],'text':text,'region':_box(item.get('region'))}
+        location={}
+        try:region=_box(item.get('region'))
+        except ValueError:
+            if not unassigned:raise
+            raw_region=item.get('region')
+            # Only known, finite xywh structures can fail into unknown location.
+            # Unexpected fields, booleans, NaN and malformed shapes stay errors.
+            if isinstance(raw_region,dict):
+                if set(raw_region)!={'x','y','width','height'}:raise
+                coords=[raw_region[key] for key in ('x','y','width','height')]
+            else:coords=raw_region
+            if coords is not None and (not isinstance(coords,list) or len(coords)!=4 or any(type(v) not in (int,float) or not math.isfinite(v) for v in coords)):raise
+            region=None
+            location={'location_status':'unknown','location_reason':'区域超出当前页或尺寸无效，位置未知。' if coords is not None else '未提供可核对的区域，位置未知。'}
+        row={'role':item['role'],'script_kind':item['script_kind'],'text':text,'region':region,**location}
         if unassigned:
             affected=item.get('affected_orders',[])
             if not isinstance(affected,list) or len(affected)>12 or any(type(v) is not int or not 1<=v<=12 for v in affected):raise ValueError('未归属片段关联不正确')
@@ -174,6 +188,8 @@ def normalize_page(raw,page_index,generation):
     output={'batch_id':new_id(),'source_revision':1,'client_generation':generation,'page_index':page_index,'items':[],
             'unassigned_fragments':unassigned,'overflow':raw['overflow'] or len(raw['items'])>MAX_ITEMS,
             'warnings':[],'original_search':{'status':question_search.capabilities()}}
+    if any(f.get('location_status')=='unknown' for f in unassigned):
+        output['warnings'].append('有笔迹的区域无效，文字已保留但位置未知；受影响题目不自动判题。')
     seen_work={}
     for order,source in enumerate(raw['items'][:MAX_ITEMS],1):
         item_id=new_id()
@@ -214,7 +230,7 @@ def normalize_page(raw,page_index,generation):
             if base['uncertain_lines'] or _unclear_symbols(base['problem']) or any(_unclear_symbols(s) for s in base['steps']):reasons.append('关键文字或符号还没看清。')
             if any(f['role']=='unknown' for f in base['fragments']):reasons.append('题目中还有角色不明的笔迹。')
             for fragment in unassigned:
-                if fragment['role']=='unknown' and (not fragment['affected_orders'] or order in fragment['affected_orders']):reasons.append('附近有无法归属的笔迹，先跳过这题。')
+                if (fragment['role']=='unknown' or fragment.get('location_status')=='unknown') and (not fragment['affected_orders'] or order in fragment['affected_orders']):reasons.append('附近有无法归属的笔迹，先跳过这题。')
             if not any(f['role']=='problem' for f in base['fragments']):reasons.append('缺少可追溯的原题片段。')
             if base['answer_presence']=='present' and not any(f['role']=='student_work' for f in base['fragments']):reasons.append('缺少可追溯的作答片段。')
             printed=''.join(_transcript_key(f['text'],number,True) for f in base['fragments'] if f['role']=='problem')
@@ -245,6 +261,10 @@ def normalize_page(raw,page_index,generation):
                     if isinstance(text,str) and len(text)<=limit:base[key]=text
                 lines=source.get('steps')
                 if isinstance(lines,list) and len(lines)<=30 and all(isinstance(t,str) and len(t)<=2000 for t in lines):base['steps']=lines
+            if isinstance(source,dict) and isinstance(source.get('fragments'),list):
+                for fragment in source['fragments'][:64]:
+                    try:base['fragments'].extend(_fragments([fragment]))
+                    except (ValueError,TypeError):pass
             base['attention_reasons']=['这道题的识别结构不完整，请重拍这题。'];base['auto_ready']=False;base['readiness']='needs_attention'
         output['items'].append(base)
     if output['overflow']:output['warnings'].append('本次最多整理12道大题，还有内容未处理。可以保留原图，稍后局部重拍。')

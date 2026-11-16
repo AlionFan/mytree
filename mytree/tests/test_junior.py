@@ -13,6 +13,14 @@ from test_all import _req,_serve
 TEACHING={'hints':[r'先看已知条件。',r'把条件对应到通用规则。',r'再核对完整解法。'],
  'card':{'title':'本题知识','body':'先理解条件再运算。','tip':'核对边界与单位。'},'assessment':'模型认为正确，但这只是待核对意见。','knowledge_ids':['G9'],'answer_latex':'999'}
 
+def extension_fixture(factor=False):
+ items=[]
+ for n in (5,6,7):
+  items.append({'question':(f'分解因式：\\(x^2-{n*n}\\)。' if factor else f'计算 \\({n}*3-1\\)。'),
+                'relation':'与原题使用相同的公式或运算方法。','answer':f'(x-{n})(x+{n})' if factor else str(n*3-1),
+                'solution':'先对应原题的方法，再逐步核对。','answer_kind':'text'})
+ return {'items':items},{'model':'mock-extension'}
+
 class FormulaTests(unittest.TestCase):
  def test_real_exam_arithmetic_and_exact_constants(self):
   value=parse_math(r'-1^{2024}+|2-\sqrt{3}|-\sqrt[3]{-27}+2\cos30^\circ')
@@ -83,22 +91,25 @@ class JuniorFlowTests(unittest.TestCase):
   result=self.study('calculate','N1',r'（1）计算：$2+3$。',[r'解：$=2+3=5$'])
   self.assertEqual(result['analysis']['problem_latex'],'2+3')
   self.assertEqual(result['analysis']['status'],'correct')
- def test_new_topic_practice_feedback_and_review_loop(self):
+ def test_new_topic_ai_practice_feedback_does_not_complete_review(self):
   result=self.study('calculate','N1',r'计算 \(2*3-1\)。',[], '2*3-1');rid=result['diagnosis_id']
-  practice=self.post('/api/practice',diagnosis_id=rid)
+  before=profile.get(self.student)['reviews']
+  with patch('app.ai.complete',return_value=extension_fixture()):practice=self.post('/api/practice',diagnosis_id=rid)
   for item in practice['items']:
    self.assertNotIn('expected',item);self.assertNotIn('answer_latex',item)
-   answer=profile._load()[self.student]['exercises'][item['id']]['answer_latex']
-   self.assertTrue(self.post('/api/practice/check',exercise_id=item['id'],answer=answer)['correct'])
+   self.assertEqual(item['verification']['level'],'unverified')
+   answer=profile._load()[self.student]['exercises'][item['id']]['reference_answer']
+   with patch('app.ai.complete',return_value=({'feedback':'请核对运算顺序。'},{})):
+    self.assertIsNone(self.post('/api/practice/check',exercise_id=item['id'],answer=answer)['correct'])
   self.post('/api/feedback',diagnosis_id=rid,rating='confusing')
   self.post('/api/feedback',diagnosis_id=rid,rating='incorrect')
-  p=profile.get(self.student);self.assertEqual(p['practice_correct'],3);self.assertEqual(p['feedback_count'],2)
+  p=profile.get(self.student);self.assertEqual(p['practice_correct'],0);self.assertEqual(p['feedback_count'],2);self.assertEqual(p['reviews'],before)
   self.assertEqual(profile.diagnosis_for(self.student,rid)['prompt_version'],junior.PROMPT_VERSION)
   self.assertEqual(profile._load()[self.student]['feedback'][-1]['review_status'],'unreviewed')
- def test_missing_probability_conditions_do_not_invent_practice(self):
+ def test_incomplete_ai_exercise_output_does_not_save_partial_batch(self):
   result=self.study('probability','P2','求至少一人选 D 的概率。');rid=result['diagnosis_id']
   status,raw=_req(self.base,'POST','/api/practice',{'student':self.student,'diagnosis_id':rid})
-  self.assertEqual(status,422);self.assertEqual(json.loads(raw)['code'],'UNSUPPORTED')
+  self.assertEqual(status,502);self.assertEqual(json.loads(raw)['code'],'AI_EXERCISE_INCOMPLETE')
   self.assertFalse(profile._load()[self.student]['exercises'])
   self.post('/api/feedback',diagnosis_id=rid,rating='confusing')
   self.assertEqual(profile.get(self.student)['feedback_count'],1)
@@ -124,7 +135,8 @@ class JuniorFlowTests(unittest.TestCase):
   result=self.study('factor','F2',r'因式分解 \(x^2-9\)。',['(x-3)(x+3)'],r'x^2-9')
   self.assertEqual(result['analysis']['status'],'correct');self.assertEqual(len(result['analysis']['hints']),2);self.assertEqual(result['analysis']['hint_levels_available'],3)
   self.assertTrue(self.post('/api/hint',diagnosis_id=result['diagnosis_id'],level=3)['text'])
-  self.assertEqual(len(self.post('/api/practice',diagnosis_id=result['diagnosis_id'])['items']),3)
+  with patch('app.ai.complete',return_value=extension_fixture(factor=True)):
+   self.assertEqual(len(self.post('/api/practice',diagnosis_id=result['diagnosis_id'])['items']),3)
  def test_legacy_factorization_still_uses_the_verified_engine(self):
   result=self.study('factor','F2','因式分解',['(x-3)^2'],r'x^2-9')
   self.assertEqual(result['analysis']['engine'],'algebra');self.assertEqual(result['analysis']['cause'],'F-MIX-FORMULA')

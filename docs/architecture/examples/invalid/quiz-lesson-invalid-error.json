@@ -1,8 +1,0 @@
-{
-  "schema": "QuizLessonError",
-  "reason": "只读讲解不调用模型，不返回模型鉴权错误码",
-  "payload": {
-    "error": "请稍后重试。",
-    "code": "MODEL_AUTH"
-  }
-}

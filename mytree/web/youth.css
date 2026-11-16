@@ -117,3 +117,47 @@ body[data-route="/"] #app.source-view .document-preview canvas{margin:72px}
 /* Text solutions read from the top; reserve the figure canvas for actual figures. */
 .diagram-stage:has(.diagram-derivation){display:block;background:transparent;padding:0}
 .diagram-stage>.diagram-derivation{width:100%;align-self:start}
+
+/* 2026-11-16: compact bottom privacy links and persistent learning controls. */
+body:has(>.workspace){grid-template-rows:auto minmax(0,1fr) 38px!important}
+body:has(>.workspace)>footer.privacy{position:static!important;align-self:end;display:flex;align-items:center;justify-content:center;gap:16px;height:38px;min-height:0;margin:0!important;padding:0 12px!important;border:0;font-size:12px;line-height:1.4;z-index:1;background:#fafbf7}
+body:has(>.workspace)>footer.privacy a{display:inline-flex;align-items:center;min-height:32px;padding:0 4px}
+.result-tabs.floating-study-actions{position:relative;align-self:center;width:fit-content;max-width:100%;z-index:15;display:flex;flex-wrap:nowrap;padding:6px!important;gap:5px!important;border:1px solid #d7e2ce!important;border-radius:999px!important;background:#fffef9f5!important;box-shadow:0 5px 0 #d8ded2,0 8px 22px #243e3712;flex-shrink:0}
+.result-tabs.floating-study-actions button{min-width:68px;min-height:46px;padding:8px 16px!important;border-radius:999px!important;font-size:15px!important;white-space:nowrap}
+.result:has(>.floating-study-actions){position:relative;padding-bottom:76px!important}
+.result>.floating-study-actions{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);margin:0!important}
+.result-task-body{padding-bottom:12px}.result-actions:empty{display:none}
+.question-navigation{display:flex;flex-shrink:0;align-items:center;justify-content:center;gap:12px;padding:10px 12px;margin:0 0 8px;background:#edf4e5;border:1px solid #bed0ac;border-radius:18px;box-shadow:0 3px 0 #d5dfcc}
+.question-navigation>button{flex:none!important;min-height:46px;padding:8px 18px;font-size:15px;white-space:nowrap}
+.question-navigation .question-counter{position:static!important;inset:auto!important;background:transparent;border:0;padding:0;font-size:16px;font-weight:700;white-space:nowrap;min-width:130px;text-align:center}
+.practice-actions{display:flex;gap:10px;flex-wrap:wrap}.practice-actions>button{min-height:44px}
+#card-practice-dialog .practice-list{min-height:180px}#card-practice-dialog{width:min(850px,calc(100vw - 24px))}
+@media(max-width:700px){body:has(>.workspace){grid-template-rows:auto minmax(0,1fr) 32px!important}body:has(>.workspace)>footer.privacy{height:32px;font-size:11px;gap:10px}.result-tabs.floating-study-actions{padding:4px!important;gap:3px!important}.result-tabs.floating-study-actions button{min-width:61px;font-size:14px!important;padding:7px 12px!important}.question-navigation{gap:6px;padding:7px;margin-bottom:6px;flex-wrap:wrap}.question-navigation>button{padding:7px 10px;font-size:12px}.question-navigation .question-counter{min-width:100px;font-size:13px}.question-navigation [data-question-chooser]{flex-basis:100%!important;max-width:none!important;min-height:38px}.result:has(>.floating-study-actions){padding-bottom:72px!important}}
+
+/* The mode capsule occupies the first row; keep question navigation below it. */
+.capture-panel:has(#result:not(:empty))>.question-navigation{margin-top:58px;position:relative;z-index:6}
+.capture-panel:has(#result:not(:empty)) .current-question{margin-top:0!important}
+@media(max-width:900px){body:has(>.workspace) .primary-nav{bottom:calc(40px + env(safe-area-inset-bottom,0px))}}
+
+.capture-panel:has(>.question-navigation) #result{padding-top:0!important}
+/* Short windows need document scrolling rather than a zero-height lesson pane. */
+@media(max-height:560px){
+ body:has(#result:not(:empty)){display:block!important;height:auto!important;min-height:100dvh;overflow:auto!important}
+ body:has(#result:not(:empty)) .workspace{height:auto!important;overflow:visible!important;padding-bottom:170px!important}
+ body:has(#result:not(:empty)) .workspace>main{height:auto!important;overflow:visible!important;min-height:0}
+ body:has(#result:not(:empty)) .desk-grid{height:auto!important;display:block!important;overflow:visible!important}
+ body:has(#result:not(:empty)) .capture-panel{height:auto!important;overflow:visible!important;min-height:0!important}
+ body:has(#result:not(:empty)) #result{height:auto!important;overflow:visible!important;display:block!important;min-height:0!important}
+ body:has(#result:not(:empty)) .result-task-body,body:has(#result:not(:empty)) .result-pane{height:auto!important;overflow:visible!important;min-height:180px}
+ body:has(#result:not(:empty)) .current-question{max-height:140px;min-height:36px}
+ body:has(#result:not(:empty)) .result>.floating-study-actions{position:fixed;bottom:108px;z-index:25}
+ body:has(#result:not(:empty)) footer.privacy{margin-top:12px!important}
+}
+/* 11:52: compact on-demand question selection and a left floating study rail. */
+.capture-panel .capture-secondary [data-question-chooser]{width:auto!important;min-width:68px!important;font-size:12px!important;padding:7px 10px!important}
+.result:has(>.floating-study-actions){padding-left:70px!important;padding-bottom:6px!important}
+.result>.floating-study-actions{position:fixed!important;left:max(15px,calc((100vw - 1600px)/2 + 25px))!important;top:max(72px,calc((100dvh - var(--study-keyboard-height,0px) - 216px)/2))!important;bottom:auto!important;transform:none!important;flex-direction:column!important;gap:4px!important;padding:4px!important;max-height:calc(100dvh - var(--study-keyboard-height,0px) - 90px);overflow-y:auto;overflow-x:hidden;width:58px!important;border-radius:22px!important;z-index:25}
+.result>.floating-study-actions button{width:48px;min-width:48px;min-height:44px;padding:7px 4px!important;font-size:13px!important;flex-shrink:0}
+#app.source-view .floating-study-actions{display:none!important}
+.partial-transcript{padding:10px 0}.partial-transcript h3{font-size:15px}.partial-transcript .math-prose{margin:8px 0}
+@media(max-width:700px){.result:has(>.floating-study-actions){padding-left:58px!important;padding-bottom:4px!important}.result>.floating-study-actions{left:11px!important;width:50px!important}.result>.floating-study-actions button{width:40px;min-width:40px;min-height:44px;font-size:12px!important}}

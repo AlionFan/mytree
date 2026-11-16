@@ -31,6 +31,28 @@ class UploadsTests(unittest.TestCase):
    with self.subTest(change=list(change)),self.assertRaises(DomainError):uploads.save('one',body()|change)
   for value in ['x',0,-1,100001]:
    with self.assertRaises(DomainError):uploads.listing('one',value)
+ def test_storage_bound_is_atomic_and_replay_still_allowed(self):
+  with patch.object(uploads,'MAX_IMAGES',1):
+   uploads.save('one',body());self.assertTrue(uploads.save('one',body())['duplicate'])
+   with self.assertRaises(DomainError) as e:uploads.save('one',body('two'))
+   self.assertEqual(e.exception.code,'UPLOAD_LIMIT');self.assertEqual(uploads.listing('one')['total'],1)
+ def test_concurrent_new_uploads_do_not_overrun_bound(self):
+  def upload(index):
+   try:return uploads.save('one',body('parallel_'+str(index)))['ok']
+   except DomainError as e:return e.code
+  with patch.object(uploads,'MAX_IMAGES',1),concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:results=list(pool.map(upload,range(3)))
+  self.assertEqual(results.count(True),1);self.assertEqual(results.count('UPLOAD_LIMIT'),2);self.assertEqual(uploads.listing('one')['total'],1)
+ def test_link_requires_own_real_batch_and_revision(self):
+  from app.reading_registry import registry,ConfirmationError
+  v=uploads.save('one',body())['upload'];batch={'batch_id':'batch_for_upload','source_revision':1,'client_generation':'g','page_index':1,'items':[]}
+  registry.remember_page('one','req_upload','digest',batch)
+  with self.assertRaises(ConfirmationError):uploads.link('two',{'upload_id':v['id'],'batch_id':batch['batch_id'],'source_revision':1})
+  with self.assertRaises(ConfirmationError):uploads.link('one',{'upload_id':v['id'],'batch_id':batch['batch_id'],'source_revision':2})
+  uploads.link('one',{'upload_id':v['id'],'batch_id':batch['batch_id'],'source_revision':1})
+  from app import store
+  store.update('one',lambda data:data['wrong_cards'].update(card_upload={'id':'card_upload','diagnosis_id':'diag_upload','problem':'x²−9','_source':{'batch_id':batch['batch_id'],'source_revision':1}}))
+  self.assertEqual(uploads.listing('one')['items'][0]['related'][0]['id'],'card_upload')
+  self.assertEqual(uploads.listing('two')['items'],[])
  def test_safe_metadata_no_inline_image_or_other_owner(self):
   uploads.save('one',body(name='<script>alert(1)</script>.jpg'));text=json.dumps(uploads.listing('one'));self.assertNotIn('base64',text);self.assertNotIn('original',text);self.assertNotIn('owner',text)
 

@@ -13,7 +13,7 @@ class DiagramTests(unittest.TestCase):
   self.tmp=tempfile.TemporaryDirectory();self.patch=patch('app.profile._PATH',self.tmp.name+'/profiles.json');self.patch.start()
   self.source=cards.study('owner',{'problem':'x^2-9','steps':['(x-3)^2']},'source',strict=False)['output']['wrong_card'];self.did=self.source['diagnosis_id']
   def generic(v):
-   v['events'][-1]['analysis'].update(problem='已知三角形ABC，求角A。',knowledge_ids=['G1'])
+   v['events'][-1]['analysis'].update(problem='已知三角形ABC，求角A。',knowledge_ids=['G1'],hints=[])
    v['wrong_cards'][self.source['id']].update(problem='已知三角形ABC，求角A。',knowledge_ids=['G1'])
   store.update('owner',generic)
  def tearDown(self):self.patch.stop();self.tmp.cleanup()
@@ -48,7 +48,7 @@ class DiagramTests(unittest.TestCase):
    self.assertEqual(result,again);self.assertEqual(model.call_count,1)
    self.assertTrue(all('lines' in step and 'svg' not in step for step in result['steps']))
    self.assertEqual(result['max_hint_level_recorded'],3)
-   self.assertTrue(all(key.startswith('v8:solution-first:') for key in store.read('owner')['visual_lessons']))
+   self.assertTrue(all(key.startswith('v9:text-first:') for key in store.read('owner')['visual_lessons']))
  def test_algebra_choice_rejects_unrelated_geometry(self):
   problem='下列计算正确的是 A.(a-2)(a+2)=a²+4 B.a³÷a²=a C.(x+y)²=x²+xy+y² D.(ab²)³=a³b⁵'
   with self.assertRaises(ValueError):visual.validate_source_diagram(copy.deepcopy(SPEC),{'problem':problem})

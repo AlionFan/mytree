@@ -19,8 +19,8 @@ class EmailTemplateTests(unittest.TestCase):
             self.assertIn('仅可使用一次', body)
             self.assertIn('如果不是你本人操作', body)
         self.assertNotIn('<table', plain)
-        self.assertIn('src="cid:crystal-hero"', html)
-        self.assertNotIn('<img src="http', html)
+        self.assertIn('src="https://mytree.joybeat.cn/mail-hero.jpg"', html)
+        self.assertNotIn('cid:', html)
         self.assertNotIn('<script', html)
         self.assertNotIn('http://', html)
         self.assertNotIn('email-code.html', html)
@@ -47,7 +47,7 @@ class EmailTemplateTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 verification_email('012345', origin)
         _, html = verification_email('012345', 'https://example.test')
-        self.assertIn('https://example.test/welcome', html)
+        self.assertIn('https://example.test/mail-hero.jpg', html)
 
     def test_smtp_sends_plain_and_html_alternatives(self):
         config = {'host':'smtp.example.test','port':465,'user':'test','password':'test-only','from':'sender@example.test'}
@@ -55,15 +55,15 @@ class EmailTemplateTests(unittest.TestCase):
             smtp.return_value.__enter__.return_value.send_message.return_value = {}
             auth.send_code('recipient@example.test', '012345')
             message = smtp.return_value.__enter__.return_value.send_message.call_args.args[0]
-        # Bound the full SMTP payload, including base64 overhead and the selected photo.
-        self.assertLess(len(message.as_bytes(policy=policy.SMTP)), 128 * 1024)
+        self.assertLess(len(message.as_bytes(policy=policy.SMTP)), 16 * 1024)
         parsed = BytesParser(policy=policy.default).parsebytes(message.as_bytes())
         self.assertEqual(parsed.get_content_type(), 'multipart/alternative')
-        self.assertEqual([p.get_content_type() for p in parsed.iter_parts()], ['text/plain','multipart/related'])
-        images = [part for part in parsed.walk() if part.get_content_type() == 'image/jpeg']
-        self.assertEqual(len(images), 1)
-        self.assertEqual(images[0]['Content-ID'], '<crystal-hero>')
-        self.assertTrue(images[0].get_payload(decode=True).startswith(b'\xff\xd8'))
+        self.assertEqual([p.get_content_type() for p in parsed.iter_parts()], ['text/plain','text/html'])
+        self.assertFalse(list(parsed.iter_attachments()))
+        self.assertFalse(any(p.get_content_maintype() == 'image' for p in parsed.walk()))
+        self.assertIsNotNone(parsed['Date'])
+        self.assertTrue(str(parsed['Message-ID']).endswith('@example.test>'))
+        self.assertEqual(parsed['Auto-Submitted'], 'auto-generated')
         self.assertEqual(parsed['To'], 'recipient@example.test')
         self.assertEqual(str(parsed['Subject']), '小树同学 · 登录验证码')
         for kind in ('plain', 'html'):

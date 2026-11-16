@@ -58,18 +58,24 @@ class WebPracticeTests(unittest.TestCase):
     if topic=='P1':
      corrects=[event_practice.event_kind(i['choice_options'][i['answer_latex']]) for i in items]
      self.assertEqual(corrects,['certain','impossible','random'])
- def test_http_ordinary_dispatch_for_two_sources_and_old_supported_formula(self):
+ def test_http_ai_practice_for_owned_sources_is_reference_and_idempotent(self):
   http,base=_serve()
+  generated={'items':[{'question':f'完整合成练习 {n}，求结果。','answer':str(n),'solution':f'按完整条件计算得到{n}。','relation':'原题考点延伸','answer_kind':'text'} for n in (1,2,3)]}
   try:
-   for index,(problem,topic) in enumerate([(P4,'P1'),(P6,'I1'),('1．因式分解：$x^{2}-9$','F2')]):
-    source=self.source(problem,topic,'source'+str(index))
-    code,raw=_req(base,'POST','/api/practice',{'student':'owner','diagnosis_id':source['diagnosis_id']});self.assertEqual(code,200,raw)
-    public=json.loads(raw);self.assertEqual(len(public['items']),3);self.assertNotIn('answer_latex',raw.decode())
+   for index,(problem,topic) in enumerate([(P4,'P1'),(P6,'I1'),('因式分解x^2-9','F2')]):
+    source=self.source(problem,topic,'source'+str(index));before=store.read('owner')
+    with patch('app.ai.complete',return_value=(generated,{})) as model:
+     code,raw=_req(base,'POST','/api/practice',{'student':'owner','diagnosis_id':source['diagnosis_id']})
+    self.assertEqual(code,200,raw);self.assertEqual(problem,json.loads(model.call_args.args[1][-1]['content'])['problem'])
+    public=json.loads(raw);self.assertEqual(len(public['items']),3);self.assertNotIn('reference_answer',raw.decode())
     for item in public['items']:
-     saved=store.read('owner')['exercises'][item['id']]
-     code,raw=_req(base,'POST','/api/practice/check',{'student':'owner','exercise_id':item['id'],'answer':saved['answer_latex'] if topic!='F2' else saved['a']});self.assertEqual(code,200,raw);self.assertTrue(json.loads(raw)['correct'])
-    again=json.loads(_req(base,'POST','/api/practice/check',{'student':'owner','exercise_id':item['id'],'answer':'A'})[1]);self.assertTrue(again['duplicate'])
-    code,_=_req(base,'POST','/api/practice/check',{'student':'stranger','exercise_id':item['id'],'answer':'A'});self.assertNotEqual(code,200)
+     with patch('app.ai.complete',return_value=({'feedback':'核对条件与运算。'},{})):
+      code,raw=_req(base,'POST','/api/practice/check',{'student':'owner','exercise_id':item['id'],'answer':'1'})
+     self.assertEqual(code,200,raw);self.assertIsNone(json.loads(raw)['correct'])
+    again=json.loads(_req(base,'POST','/api/practice/check',{'student':'owner','exercise_id':item['id'],'answer':'1'})[1]);self.assertTrue(again['duplicate'])
+    code,_=_req(base,'POST','/api/practice/check',{'student':'stranger','exercise_id':item['id'],'answer':'1'});self.assertNotEqual(code,200)
+    after=store.read('owner')
+    for key in ('lit','kp_correct','practice_correct','events','reviews','quiz_answers'):self.assertEqual(before[key],after[key])
   finally:http.shutdown();http.server_close()
  def test_quiz_choice_contract_legacy_answer_and_idempotence(self):
   source=self.source(P4,'P1')
@@ -98,7 +104,10 @@ class WebPracticeTests(unittest.TestCase):
    answer=card_learning.handle('owner',{'card_id':card,'action':'answer','variant':variant,'answer':solution['answer_latex']});self.assertTrue(answer['correct'])
   after=store.read('owner')
   for key in ('knowledge_cards','quizzes','quiz_answers','growth_events','reviews'):self.assertEqual(before[key],after[key])
- def test_unknown_event_structure_does_not_create_empty_exercises(self):
+ def test_untemplated_event_concept_can_generate_complete_ai_exercises(self):
   source=self.source('计算某个未知随机事件的概率。','P1')
-  with self.assertRaises(DomainError):profile.create_exercises('owner',diagnosis_id=source['diagnosis_id'])
-  self.assertFalse(store.read('owner')['exercises'])
+  values=[('均匀六面骰掷一次，点数至少为5的概率？','1/3','两个有利点数除以六。'),('袋中3个红球7个蓝球，等可能摸一球，红球概率？','3/10','三个有利结果除以十。'),('公平硬币独立抛两次，恰好一次正面概率？','1/2','四种等可能结果中有两种。')]
+  output={'items':[{'question':q,'answer':a,'solution':r,'relation':'等可能事件计数','answer_kind':'text'} for q,a,r in values]}
+  with patch('app.ai.complete',return_value=(output,{})) as model:result=profile.create_exercises('owner',diagnosis_id=source['diagnosis_id'])
+  self.assertEqual(len(result['items']),3);self.assertEqual(model.call_count,1)
+  self.assertTrue(all(row['verification']['level']=='unverified' for row in result['items']))

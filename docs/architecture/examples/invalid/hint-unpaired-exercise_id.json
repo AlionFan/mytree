@@ -1,9 +1,0 @@
-{
-  "schema": "HintRequest",
-  "payload": {
-    "diagnosis_id": "diagnosis-1",
-    "level": 2,
-    "exercise_id": "single-id"
-  },
-  "reason": "D1：quiz_id与exercise_id必须同时出现。"
-}

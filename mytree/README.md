@@ -6,6 +6,16 @@
 
 拍照 / 上传图片或 PDF → 选页与框选 → 识别并确认题目与演算 → 定位第一个卡点 → 三级提示 / 数形结合 → 3 道针对练习 → 保存结果 → 自动复习排期 → 知识树与家长看板。
 
+## 2026-11-16 当前交互与接口变更
+
+以本节和最新 PRD 为准：探索者只显示“语音对话 / 视频探索”两主要动作，开启视频默认看画面学英语；语音对话只申请麦克风。题目学习以文字完整解法为主，有助理解时辅图。巩固练习由 AI 按当前原题生成三题，参考反馈不计掌握或检验成绩。
+
+用户已要求退役“三题检验”：页面不再显示入口，Agent 的 `quiz.start / quiz.answer / card.unlock` 兼容返回422 `UNSUPPORTED`，旧 `GET /api/quiz/lesson` 返回410 `FEATURE_RETIRED`。历史记录和既有树卡保留，旧 Schema 枚举仅为客户端兼容，不代表服务仍开放。后文较早的检验/解锁流程作为历史说明，被本节覆盖。
+
+练习结构兼容字段别名、数值答案与步骤数组；缺字段最多修复一次，不凭程序填造答案。验证码邮件是 text/plain + text/html，不含图片附件；同站图片单独加载。Gmail 的收件分类仍需收件方实测。
+
+有道 Hu 账号 mytree 应用已开整题V2、切题、表格、手写识别、图像矫正及手写擦除；这是供应商侧服务开通，尚未接入正式 OCR 链。精品题库是非公开服务，已获用户授权发送官方申请，等待权限/报价；现有题库适配器仍未真实联通。不更换现有正式AI模型。精确测试、发布和限制见 [本批证据](../docs/evidence/feedback-1116/README.md)。
+
 ## 启动
 
 首次安装（Python 3.12、uv）：
@@ -276,3 +286,9 @@ Android与Web共用MathUI及交互；幂、乘法、分式/根式及裸ASCII/LaT
 
 
 2026-11-16线上回执：`mytree-official-speech-20261115T164637Z`已独验后隔离发布，375公开源只有ai/speech/mem0_adapter/explorer四文件相对前一生产版本变化，373容器运行源SHA一致。读图/文字/图解qwen3.6-flash，ASR qwen3-asr-flash，TTS qwen3-tts-flash，embedding text-embedding-v4/1024，均北京百炼官方。27AI私有字段更新，其他字段、TEST_PROFILE和持久卷保留，实际容器重启及隔离合成记忆持久化通过。录音新增实时音量、静音/过短预检和可操作恢复提示；两组已知TTS流式WAV占位头按实际完整PCM帧处理。用户偶发空转录根因尚未关闭；物理设备扬声器测试句成功不等于真人人声准确率通过。完整证据[线上录音与官方切换](../docs/evidence/speech-capture/README.md)。
+
+### 2026-11-16 · 未归属笔迹未知位置与有界教学预算（待独验）
+
+`PageRecognitionOutput.unassigned_fragments` 中，只有无法得到有效坐标的未归属片段可以返回 `region: null`，同时必须有 `location_status: "unknown"` 与非空 `location_reason`。文字、原角色和 `affected_orders` 保留；若未能明确受影响题号，保守阻止整页自动判题。原非法区域只存受控评测证据，不作为可绘制坐标返回。普通题目及其problem/student_work等片段仍必须是严格有效的xywh数组。网页消费未归属片段的文字、全页警示和受影响题状态，不对null区域裁图；外部客户端不得把null当作[0,0,1,1]或猜测位置。
+
+复杂带图的几何/函数/应用题，在题干有多小问或较长时，将单次教学输出上限从3200提高至6400 tokens；普通题维持3200，没有自动重复计费请求。模型如自报 `solution_status=partial` / `needs_clarification`，返回可重试的 `TEACHING_SOLUTION_INCOMPLETE`，不将部分思路保存为完整解法；旧输出未提供此字段保持兼容，这不等于程序验证了其教学完整性。结构与预算修复不代表几何证明可靠，详见本机证据 `../docs/evidence/ocr-output-recovery/README.md`；尚未上线。

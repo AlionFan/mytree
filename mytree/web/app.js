@@ -4,7 +4,7 @@ const app = document.getElementById('app');
 const $ = (id) => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const {math:mathHTML,rich:richHTML,field:mathField}=MathUI;
-const state = {questionSearch:{},pageBatch:null,pageStudies:{},activeReadingId:null,batchBusy:false,batchInFlight:0,batchCancelled:false,pageRequestId:null,sourceGeneration:null,stage:'select',showOriginal:false,problem:'', steps:'', result:null, exercises:[], photo:null, photoData:null, photoEpoch:0, ocrPending:false, ocrResult:null, ocrBusy:false, hintLevel:1, tutorMessages:[], capabilities:null, fileName:"", fileKind:"", documentData:null, page:1, pageCount:0, sourceImage:null, sourceLoading:false, sourceError:"", cropMode:false, cropBox:null, dragBox:null};
+const state = {questionSearch:{},pageBatch:null,pageStudies:{},activeReadingId:null,previewReading:null,batchBusy:false,batchInFlight:0,batchCancelled:false,pageRequestId:null,sourceGeneration:null,stage:'select',showOriginal:false,problem:'', steps:'', result:null, exercises:[], photo:null, photoData:null, photoEpoch:0, ocrPending:false, ocrResult:null, ocrBusy:false, hintLevel:1, tutorMessages:[], capabilities:null, fileName:"", fileKind:"", documentData:null, page:1, pageCount:0, sourceImage:null, sourceLoading:false, sourceError:"", cropMode:false, cropBox:null, dragBox:null};
 const account = await window.MytreeAccount;
 let student;
 if(account) student=account.profile_id;
@@ -33,14 +33,14 @@ async function api(path, options={}) {
 const getProfile = () => api(`/api/profile?student=${encodeURIComponent(student)}`);
 const agentCall=async(operation,input,identity=requestId())=>{const value=await api('/api/agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({schema_version:'1.0',request_id:identity,operation,client:{type:'web',name:'mytree',version:'2.1'},subject:{profile_id:student},input})});return value.output;};
 const notice = (message, type='') => `<div class="notice ${type}" role="${type==='error'?'alert':'status'}">${esc(message)}</div>`;
-const learning=LearningUI.setup({agent:agentCall,api,post,esc,richHTML,mathField,notice,app,student,navigate:path=>{history.pushState({},'',path);render();window.scrollTo(0,0);}});
+const learning=LearningUI.setup({agent:agentCall,api,post,esc,richHTML,mathField,notice,app,student,practice:(card,reviewId)=>practiceFromCard(card,reviewId),navigate:path=>{history.pushState({},'',path);render();window.scrollTo(0,0);}});
 const diagramController=DiagramUI.setup({post,esc,richHTML,notice,onAccess:(id,level)=>{if(id===state.result?.diagnosis_id)state.hintLevel=Math.max(state.hintLevel,level);}});
 function intro() {const title=({'/':'学习桌','/tree':'知识树','/plan':'复习计划','/parent':'家长','/explore':'探索'})[location.pathname]||'学习';return `<div class="page-intro"><h1>${title}</h1></div>`;}
 function treePicture(lit) {
  return `<svg class="mini-tree" viewBox="0 0 260 160" aria-label="已点亮 ${lit} 个知识点的小树" role="img"><path d="M130 150V39M130 111L90 82M130 91L166 63M130 64L113 43" fill="none" stroke="#9eac8d" stroke-width="5" stroke-linecap="round"/><path d="M130 150h-35m35 0h35" stroke="#cad2bc" stroke-width="2"/>${[[74,65,-28],[166,49,34],[103,29,-27],[130,16,0],[160,93,45],[101,106,-45],[191,58,55],[79,115,-55]].map(([x,y,angle],i)=>`<ellipse cx="${x}" cy="${y}" rx="13" ry="23" transform="rotate(${angle} ${x} ${y})" fill="${i<lit?'#5a8865':'#dde4cf'}"/>`).join('')}</svg>`;
 }
-function exerciseHTML(items) {
- return items.map((it,i)=>`<div class="exercise" data-exercise="${esc(it.id)}"><span class="source-tag">巩固练习 ${i+1}</span>${it.verification?`<p class="field-tip">${esc(it.verification.label)}</p>`:''}<div class="math-prose">${richHTML(it.question_md||it.question,!it.question_md)}</div>${it.match_reason?`<p class="field-tip match-reason">${esc(it.match_reason)}</p>`:''}${it.domain?.length?`<div class="field-tip">保持原题范围：${richHTML(it.domain.join('；'),true)}</div>`:''}<label for="answer-${esc(it.id)}">第 ${i+1} 题答案</label><div class="row answer-row">${(it.grading==='choice'||it.answer_kind==='choice')?`<select id="answer-${esc(it.id)}" data-answer aria-label="第 ${i+1} 题答案"><option value="">选择选项</option>${['A','B','C','D'].map(label=>`<option value="${label}">${label}</option>`).join('')}</select>`:mathField('',`id="answer-${esc(it.id)}" data-answer aria-label="第 ${i+1} 题答案"`)}<button class="ghost" data-check>检查</button></div><p class="field-tip">${(it.grading==='choice'||it.answer_kind==='choice')?'选择一个选项后检查。':'点击公式框，用数学键盘输入分数、根号或集合。'}</p><p class="feedback" data-feedback role="status"></p></div>`).join('');
+function exerciseHTML(items,prefix='answer') {
+ return items.map((it,i)=>`<div class="exercise" data-exercise="${esc(it.id)}"><span class="source-tag">巩固练习 ${i+1}</span>${it.verification?`<p class="field-tip">${esc(it.verification.label)}</p>`:''}<div class="math-prose">${richHTML(it.question_md||it.question,!it.question_md)}</div>${it.match_reason?`<p class="field-tip match-reason">${esc(it.match_reason)}</p>`:''}${it.domain?.length?`<div class="field-tip">保持原题范围：${richHTML(it.domain.join('；'),true)}</div>`:''}<label for="${prefix}-${esc(it.id)}">第 ${i+1} 题答案</label><div class="row answer-row">${(it.grading==='choice'||it.answer_kind==='choice')?`<select id="${prefix}-${esc(it.id)}" data-answer aria-label="第 ${i+1} 题答案"><option value="">选择选项</option>${['A','B','C','D'].map(label=>`<option value="${label}">${label}</option>`).join('')}</select>`:mathField('',`id="${prefix}-${esc(it.id)}" data-answer aria-label="第 ${i+1} 题答案"`)}<button class="ghost" data-check>检查</button></div><p class="field-tip">${(it.grading==='choice'||it.answer_kind==='choice')?'选择一个选项后检查。':'点击公式框，用数学键盘输入分数、根号或集合。'}</p><p class="feedback" data-feedback role="status"></p></div>`).join('');
 }
 async function renderStudent(version) {
  app.innerHTML = intro('让好奇心带路','今天，想明白一点新东西。','从一道题开始，把方法变成自己的。') + `
@@ -69,13 +69,14 @@ function renderTutorMessages() {
 function renderDiagnosis(result) {
  if(!result.ok)return notice(result.message+' 请对照原图核对后再试一次。','error');
  const a=result.analysis,learning=a.status==='not_attempted',old=a.engine!=='junior',pending=a.status==='ai_review';
+ const original=result.wrong_card?.student_steps||state.ocrResult?.steps||[];const shownSteps=original.length?original.map((text,i)=>({i:i+1,text,ok:a.study_mode==='lesson_only'?null:(a.steps||[])[i]?.ok??null})):(a.steps||[]);const presence=state.ocrResult?.answer_presence;const emptyWork=presence==='absent'?'原图中未发现作答。':presence==='present'?'检测到作答，但文字尚未读完整，请对照原图。':'作答区域尚未读清，暂不能确定具体内容。';
  let message=a.study_mode==='lesson_only'?'':learning?'这道题尚未作答，先理解题意，再尝试解题。':pending?'':a.status==='correct'?'支持核验的作答与题目相符，检查结果已保存。':a.status==='incomplete'?'前面的变形等价，最后还可以再走一步。':`第 ${a.first_error} 行需要再看一看，程序核对没有通过。`;
  return `${state.ocrResult?.inferred?notice('按你确认的读法核对，识别推断不代表数学结论已经通过。'):''}<h2 class="result-title">解析</h2><div class="current-question math-prose">${richHTML(a.problem||state.problem,old)}</div><span class="source-tag">${esc(pending?'AI讲解':a.verification?.label||'学习记录')}</span>${message?notice(message,a.status==='correct'?'success':''):''}
- <details class="study-details"><summary>查看原作答与核对结果</summary><div class="steps">${a.steps.map(row=>`<div class="step ${row.ok===false?'bad':row.ok===null?'unknown':''}"><span class="n">${String(row.i).padStart(2,'0')}</span><div class="math-prose">${row.latex?mathHTML(row.latex):richHTML(row.text,old)}</div><span class="status" aria-label="${row.ok===false?'核验不通过':row.ok===null?'待核对':row.ok==='incomplete'?'尚未完成':'核验通过'}">${row.ok===false?'×':row.ok===null?'—':row.ok==='incomplete'?'…':'✓'}</span></div>`).join('')}</div></details>
+ <details class="study-details"><summary>我的作答</summary>${!shownSteps.length?`<p class="field-tip">${esc(emptyWork)}</p>`:''}<div class="steps">${shownSteps.map(row=>`<div class="step ${row.ok===false?'bad':row.ok===null?'unknown':''}"><span class="n">${String(row.i).padStart(2,'0')}</span><div class="math-prose">${row.latex?mathHTML(row.latex):richHTML(row.text,old)}</div><span class="status" aria-label="${row.ok===false?'核验不通过':row.ok===null?'待核对':row.ok==='incomplete'?'尚未完成':'核验通过'}">${row.ok===false?'×':row.ok===null?'—':row.ok==='incomplete'?'…':'✓'}</span></div>`).join('')}</div></details>
  ${a.assessment&&!/尚不能独立核验|暂不据此|进一步核对/.test(a.assessment)?`<div class="assessment math-prose"><span class="source-tag">AI讲解</span>${richHTML(a.assessment)}</div>`:''}
  ${a.domain?.length?`<div class="field-tip">保留原题取值范围：${richHTML(a.domain.join('；'),true)}</div>`:''}
  ${a.hints?.length?`<div id="hints">${Array.from({length:a.hint_levels_available||a.hints.length},(_,i)=>a.hints[i]||'').map((hint,i)=>`<section class="hint-block ${i?'hidden':''}"><button class="${i?'':'primary-next'}" data-hint="${i}" aria-expanded="false" aria-controls="hint-${i}" ${i?'disabled':''}><span><span class="hint-number">${String(i+1).padStart(2,'0')}</span>${['先找方向','再想关键一步','查看完整思路'][i]}</span><span aria-hidden="true">＋</span></button><div id="hint-${i}" class="hidden math-prose">${richHTML(hint,old)}</div></section>`).join('')}</div>`:''}
- ${a.visual_svg?`<div style="margin:16px 0"><button class="ghost full" data-show-visual aria-expanded="false" aria-controls="visual">用图形理解这道题 <span class="small-text">（含解法）</span></button><div id="visual" class="visual-box hidden">${a.visual_svg}${a.visual_svg.includes('data-rearranged')?'<button class="ghost small" data-rearrange>把两块拼起来 →</button>':''}</div></div>`:a.diagram_description?`<details class="diagram-notes"><summary>核对图形与表格条件</summary><div class="math-prose">${richHTML(a.diagram_description)}</div><p class="field-tip">请与上方原图对照，识别描述可能遗漏条件。</p></details>`:''}
+ ${a.visual_svg?`<div style="margin:16px 0"><button class="ghost full" data-show-visual aria-expanded="false" aria-controls="visual">用图形理解这道题 <span class="small-text">（含解法）</span></button><div id="visual" class="visual-box hidden">${a.visual_svg}${a.visual_svg.includes('data-rearranged')?'<button class="ghost small" data-rearrange>把两块拼起来 →</button>':''}</div></div>`:''}
  ${a.card?`<details class="knowledge-details"><summary>知识点</summary><div class="knowledge"><h3>${esc(a.card.title)}</h3><div class="math-prose">${richHTML(a.card.body,old)}</div><div class="muted math-prose">${richHTML(a.card.tip,old)}</div></div></details>`:''}
  <details class="study-details"><summary>我还有疑问，展开问一问</summary><section class="tutor-section"><h3>围绕这道题，一起想</h3><p class="field-tip">一次想明白一个问题。讲解跟随已展开的提示级别。</p><div class="row tutor-suggestions"><button class="ghost small" data-tutor-prompt="这道题应该从哪里开始想？">从哪里开始想？</button><button class="ghost small" data-tutor-prompt="请用一个具体例子或图形关系，换一种说法帮我理解。">换个例子讲讲</button></div><div id="tutor-messages" aria-live="polite">${renderTutorMessages()}</div><form id="tutor-form"><label for="tutor-question">我想问</label><div class="row"><input id="tutor-question" maxlength="300" placeholder="说说哪里还没想明白" autocomplete="off"><button type="submit">提问</button></div></form><div id="tutor-status" aria-live="polite"></div>
  <div class="learning-feedback"><p class="field-tip">这次讲解对你有帮助吗？</p><div class="row"><button class="ghost small" data-rating="understood">听懂了</button><button class="ghost small" data-rating="confusing">再讲简单些</button><button class="ghost small" data-rating="incorrect">可能有误</button></div><div id="feedback-status" aria-live="polite"></div></div></section></details>
@@ -99,10 +100,16 @@ async function diagnoseInput() {
  } catch(e) {if(out.isConnected)out.innerHTML=notice(e.message,'error');}
  finally {if(button.isConnected){button.disabled=false;button.textContent=state.steps?'重新核对并检查作答':'重新核对并开始学习';}}
 }
-async function startPractice(button, data) {
- const box = $('practice-list'); button.disabled=true;
+function practiceFromCard(card,reviewId){
+ let box=$('card-practice-dialog');if(!box){box=document.createElement('dialog');box.id='card-practice-dialog';box.className='knowledge-lesson-dialog';document.body.append(box);}
+ box.innerHTML=`<div class="section-title"><h2>巩固练习</h2><button class="ghost small" data-close-card-practice>关闭</button></div><div class="math-prose">${richHTML(card.problem,true)}</div><button data-start-card-practice>生成同类练习</button><div class="practice-list" data-answer-prefix="card-answer" aria-live="polite"></div>`;
+ box.querySelector('[data-close-card-practice]').onclick=()=>box.close();const button=box.querySelector('[data-start-card-practice]');button.onclick=()=>startPractice(button,reviewId?{review_id:reviewId}:{diagnosis_id:card.diagnosis_id},box.querySelector('.practice-list'));
+ box.showModal();button.click();
+}
+async function startPractice(button, data, box=$('practice-list')) {
+ if(!box)return; button.disabled=true;
  box.innerHTML='<p class="muted small-text" role="status">正在根据原题考点生成三道延伸练习…</p>';
- try{ const result=await post('/api/practice', data,95000);if(box.isConnected){state.exercises=result.items;box.innerHTML=exerciseHTML(result.items);}}
+ try{ const result=await post('/api/practice', data,95000);if(box.isConnected){state.exercises=result.items;box.innerHTML=exerciseHTML(result.items,box.dataset.answerPrefix||'answer');}}
  catch(e){if(box.isConnected)box.innerHTML=notice(e.message,'error');}
  finally{button.disabled=false;}
 }
@@ -120,7 +127,7 @@ function cancelPageWork(){
  if(state.pageBatch){const batch=state.pageBatch;post('/api/recognize/page/cancel',{batch_id:batch.batch_id,source_revision:batch.source_revision}).catch(()=>{});}
 }
 function resetRecognition(fresh=true) {
- cancelPageWork();state.questionSearch={};state.pageBatch=null;state.pageStudies={};state.activeReadingId=null;state.batchBusy=false;state.batchInFlight=0;state.batchCancelled=false;
+ cancelPageWork();state.questionSearch={};state.pageBatch=null;state.pageStudies={};state.activeReadingId=null;state.previewReading=null;state.batchBusy=false;state.batchInFlight=0;state.batchCancelled=false;
  if(fresh||!state.pageRequestId){state.pageRequestId=requestId();state.sourceGeneration=requestId();}
  state.stage='select';state.showOriginal=false;state.problem='';state.steps='';state.ocrResult=null;state.ocrPending=false;state.result=null;state.exercises=[];state.tutorMessages=[];state.hintLevel=1;
  for(const id of ['recognition-message','recognition-review','result','diagnose-message'])if($(id)){$(id).innerHTML='';if(id==='recognition-review')$(id).classList.add('hidden');}
@@ -131,7 +138,7 @@ function syncStage(){
  const hide=(id,hidden)=>$(id)?.classList.toggle('hidden',hidden);
  hide('upload-zone',!!state.fileName||stage!=='select');
  hide('source-area',stage!=='select'&&!state.showOriginal);
- hide('recognition-review',stage!=='review'&&!state.pageBatch);hide('result',!state.result||!['learn','batch'].includes(stage));
+ hide('recognition-review',stage!=='review'&&!state.pageBatch);hide('result',(!state.result&&!state.previewReading)||!['learn','batch'].includes(stage));
  hide('back-to-source',stage==='select');hide('view-original',stage==='select');
  hide('photo-boundary',stage!=='select'||state.cropMode);
  document.querySelectorAll('.crop-controls,.page-controls,#replace-file,#crop-help').forEach(el=>el.classList.toggle('hidden',stage!=='select'));
@@ -143,7 +150,7 @@ function syncStage(){
  hide('today-tasks',!!state.fileName);hide('saved-cards',!!state.fileName);
  updateRecognitionButton();
 }
-function updateRecognitionButton(){const button=$('recognize-photo');if(button){button.classList.toggle('hidden',!state.fileName||state.stage!=='select'||state.cropMode);button.disabled=!state.photoData||!state.capabilities?.vision||state.ocrBusy||state.sourceLoading||state.cropMode;button.textContent=state.ocrBusy?'正在识别与整理…':'识别并整理';}}
+function updateRecognitionButton(){const button=$('recognize-photo');if(button){button.classList.toggle('hidden',!state.fileName||state.stage!=='select'||state.cropMode);button.disabled=!state.photoData||!state.capabilities?.vision||state.ocrBusy||state.sourceLoading||state.cropMode;button.textContent=state.ocrBusy?'正在识别与整理…':state.pageBatch?'返回已识别内容':'识别并整理';}}
 function renderSource(){
  const box=$('source-area');if(!box)return;
  if(!state.fileName){box.innerHTML='';syncStage();return;}
@@ -156,8 +163,8 @@ function paintPreview(){const canvas=$('source-canvas');const image=state.source
 function readFile(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('文件没有读完整，请重新选择。'));reader.readAsDataURL(file);});}
 async function loadPreview(data,epoch){const image=new Image();await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(new Error('图片无法打开，请换一张 JPG、PNG 或 WebP 图片。'));image.src=data;});if(epoch!==state.photoEpoch)return;state.sourceImage=image;state.photo=data;state.cropBox=null;state.dragBox=null;state.cropMode=false;const scale=Math.min(1,2400/Math.max(image.naturalWidth,image.naturalHeight));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);state.photoData=canvas.toDataURL('image/jpeg',.88);}
 async function choosePhoto(file){
- if(!file)return;cropPointers.clear();cropGesture=null;multiPan=null;multiGesture=false;const epoch=++state.photoEpoch;resetRecognition();state.photoData=null;state.sourceImage=null;state.photo=null;state.documentData=null;state.page=1;state.pageCount=0;state.sourceError='';state.sourceLoading=true;state.ocrBusy=false;state.cropMode=false;state.cropBox=null;state.fileName=file.name;state.fileKind=file.type==='application/pdf'||/\.pdf$/i.test(file.name)?'pdf':'image';renderSource();
- try{const max=(state.fileKind==='pdf'?20:10)*1024*1024;if(file.size>max)throw new Error(state.fileKind==='pdf'?'PDF 请小于 20 MB。':'图片请小于 10 MB。');if(state.fileKind==='image'&&file.type&&!file.type.startsWith('image/'))throw new Error('请选择试题图片或 PDF 文件。');let data=await readFile(file);if(epoch!==state.photoEpoch)return;if(state.fileKind==='pdf'){data='data:application/pdf;base64,'+data.split(',')[1];state.documentData=data;const result=await post('/api/files/preview',{file_data:data,page:1},30000);if(epoch!==state.photoEpoch)return;state.pageCount=result.page_count;await loadPreview(result.preview,epoch);}else await loadPreview(data,epoch);
+ if(!file)return;cropPointers.clear();cropGesture=null;multiPan=null;multiGesture=false;const epoch=++state.photoEpoch;resetRecognition();state.photoData=null;state.sourceImage=null;state.photo=null;state.documentData=null;state.page=1;state.pageCount=0;state.sourceError='';state.sourceLoading=true;state.ocrBusy=false;state.cropMode=false;state.cropBox=null;state.fileName=file.name;state.fileKind=file.type==='application/pdf'||/\.pdf$/i.test(file.name)?'pdf':'image';state.archivePromise=null;renderSource();
+ try{const max=(state.fileKind==='pdf'?20:10)*1024*1024;if(file.size>max)throw new Error(state.fileKind==='pdf'?'PDF 请小于 20 MB。':'图片请小于 10 MB。');if(state.fileKind==='image'&&file.type&&!file.type.startsWith('image/'))throw new Error('请选择试题图片或 PDF 文件。');state.archivePromise=window.MytreeUploads?.save(file);let data=await readFile(file);if(epoch!==state.photoEpoch)return;if(state.fileKind==='pdf'){data='data:application/pdf;base64,'+data.split(',')[1];state.documentData=data;const result=await post('/api/files/preview',{file_data:data,page:1},30000);if(epoch!==state.photoEpoch)return;state.pageCount=result.page_count;await loadPreview(result.preview,epoch);}else await loadPreview(data,epoch);
  }catch(e){if(epoch===state.photoEpoch)state.sourceError=e.message;}finally{if(epoch===state.photoEpoch){state.sourceLoading=false;renderSource();}}
 }
 async function selectPage(page){if(!state.documentData||state.sourceLoading||page===state.page)return;cropPointers.clear();cropGesture=null;multiPan=null;multiGesture=false;const epoch=++state.photoEpoch;resetRecognition();state.sourceLoading=true;state.sourceError='';state.ocrBusy=false;renderSource();try{const result=await post('/api/files/preview',{file_data:state.documentData,page},30000);if(epoch!==state.photoEpoch)return;state.page=result.page;state.pageCount=result.page_count;await loadPreview(result.preview,epoch);}catch(e){if(epoch===state.photoEpoch)state.sourceError=e.message;}finally{if(epoch===state.photoEpoch){state.sourceLoading=false;renderSource();}}}
@@ -202,12 +209,12 @@ document.addEventListener('keydown',event=>{
 document.addEventListener('click',event=>{if(event.target.closest('[data-retry-page]'))recognizePhoto();});
 async function recognizePhoto(){
  if(!state.photoData||state.ocrBusy||state.cropMode)return;
- const epoch=state.photoEpoch;if(state.pageBatch){await organizePage(epoch,state.pageBatch);return;}if(!state.pageRequestId){state.pageRequestId=requestId();state.sourceGeneration=requestId();}state.ocrBusy=true;updateRecognitionButton();
+ const epoch=state.photoEpoch;if(state.pageBatch){if(state.batchBusy)return;state.stage='batch';state.showOriginal=false;syncStage();await organizePage(epoch,state.pageBatch);openPageReading(state.activeReadingId||state.pageBatch.items[0]?.reading_id);return;}if(!state.pageRequestId){state.pageRequestId=requestId();state.sourceGeneration=requestId();}state.ocrBusy=true;updateRecognitionButton();
  const output=$('recognition-message');output.innerHTML=notice('正在识别这一页的题目和原样作答，无需逐题校准…');
  try{
-  const result=await post('/api/recognize/page',{image_data:state.photoData,request_id:state.pageRequestId,client_generation:state.sourceGeneration,page_index:state.fileKind==='pdf'?state.page:1},150000);
+  const archivePromise=state.archivePromise;const result=await post('/api/recognize/page',{image_data:state.photoData,request_id:state.pageRequestId,client_generation:state.sourceGeneration,page_index:state.fileKind==='pdf'?state.page:1},150000);
   if(epoch!==state.photoEpoch||result.client_generation!==state.sourceGeneration)return;
-  state.pageBatch=result;state.pageStudies={};state.batchCancelled=false;state.stage='batch';output.innerHTML='';renderPageItems();syncStage();
+  window.MytreeUploads?.link(archivePromise,result).catch(()=>{});state.pageBatch=result;state.pageStudies={};state.batchCancelled=false;state.stage='batch';output.innerHTML='';renderPageItems();syncStage();
   $('recognition-review').scrollIntoView({block:'start',behavior:'auto'});await organizePage(epoch,result);
  }catch(error){if(epoch===state.photoEpoch&&output.isConnected){output.innerHTML=notice(error.message,'error')+'<button type="button" class="ghost small" data-retry-page>重试识别</button><span class="field-tip">原图和已有结果仍保留，也可以重新拍照。</span>';if(error.message.includes('过期')||error.message.includes('取消')){state.pageRequestId=requestId();state.sourceGeneration=requestId();}}}
  finally{if(epoch===state.photoEpoch){state.ocrBusy=false;updateRecognitionButton();}}
@@ -237,7 +244,7 @@ function renderPageItems(){
  const blocked=batch.items.filter(i=>!i.auto_ready&&!i.lesson_ready).length;
  box.innerHTML=`<section class="page-items"><div class="section-title"><div><span class="source-tag">整页识别 · 无需逐题校准</span><h2>已整理 ${completed} 题${blocked?'，'+blocked+' 题先跳过':''}</h2><p class="field-tip">共读到 ${batch.items.length} 道大题。学生原作答保留，数学核验状态逐题显示。</p></div>${state.batchBusy?'<button class="ghost small" id="stop-page-work">停止后续整理</button>':''}</div>${batch.warnings.map(v=>notice(v)).join('')}${state.batchCancelled?notice('已停止尚未开始的整理，完成的题仍保留。可以继续整理未完成的题。')+`<button class="ghost small" id="resume-page-work" ${state.batchInFlight?'disabled':''}>${state.batchInFlight?'等待当前题完成…':'继续未完成的整理'}</button>`:''}<div class="page-item-list">${batch.items.map((item,index)=>{
  const study=state.pageStudies[item.reading_id];const label=study?.status==='done'?'已整理':study?.status==='running'?'正在整理…':state.batchCancelled&&(item.auto_ready||item.lesson_ready)?'已停止':study?.status==='failed'?'整理失败，可重试':!item.auto_ready&&!item.lesson_ready?'先跳过这题':'等待整理';
- return `<article class="page-item ${state.activeReadingId===item.reading_id?'selected':''}" data-page-item="${esc(item.reading_id)}"><div class="section-title"><strong>第 ${index+1} 题${item.printed_number?' · 题号 '+esc(item.printed_number):''}</strong><span class="source-tag">${label}</span></div><div class="math-prose">${richHTML(item.problem||'这道题没有读清，请重拍。',true)}</div>${!item.auto_ready&&!item.lesson_ready?`<p class="field-tip">${esc(item.attention_reasons.join(' ')||'当前题型暂不支持。')}</p><button class="ghost small" data-retake-reading="${esc(item.reading_id)}">重拍这题</button>`:study?.status==='failed'&&!state.batchCancelled?`${notice(study.error,'error')}<button class="ghost small" data-retry-reading="${esc(item.reading_id)}">只重试这题</button>`:study?.status==='done'?`<button class="ghost small" data-open-reading="${esc(item.reading_id)}">开始学习这题</button>`:''}</article>`;
+ return `<article class="page-item ${state.activeReadingId===item.reading_id?'selected':''}" data-page-item="${esc(item.reading_id)}"><div class="section-title"><strong>第 ${index+1} 题${item.printed_number?' · 题号 '+esc(item.printed_number):''}</strong><span class="source-tag">${label}</span></div><div class="math-prose">${richHTML(item.problem||'题干尚未读完整，请查看已识别片段。',true)}</div><button class="ghost small" data-open-reading="${esc(item.reading_id)}">${study?.status==='done'?'打开这题':'查看已识别内容'}</button>${!item.auto_ready&&!item.lesson_ready?`<p class="field-tip">${esc(item.attention_reasons.join(' ')||'当前题型暂不支持。')}</p><button class="ghost small" data-retake-reading="${esc(item.reading_id)}">重拍这题</button>`:study?.status==='failed'&&!state.batchCancelled?`${notice(study.error,'error')}<button class="ghost small" data-retry-reading="${esc(item.reading_id)}">只重试这题</button>`:''}</article>`;
  }).join('')}</div>${batch.unassigned_fragments.length?`<details class="study-details"><summary>有 ${batch.unassigned_fragments.length} 处笔迹暂未归属</summary><p class="field-tip">这些内容未混入其他题目，相关题先跳过。</p>${batch.unassigned_fragments.map(f=>`<div class="math-prose">${richHTML(f.text,true)}</div>`).join('')}</details>`:''}</section>`;
  box.classList.remove('hidden');
 }
@@ -248,10 +255,19 @@ function changeRecognizedQuestion(direction){
 let questionSwipe=null;
 document.addEventListener('touchstart',event=>{const target=event.target.closest('#result .current-question,dialog[data-reading-chooser] .page-item-list');questionSwipe=target&&event.touches.length===1?{x:event.touches[0].clientX,y:event.touches[0].clientY,at:Date.now(),target}:null;},{passive:true});
 document.addEventListener('touchend',event=>{const start=questionSwipe;questionSwipe=null;if(!start||!event.changedTouches.length)return;const p=event.changedTouches[0],dx=p.clientX-start.x,dy=p.clientY-start.y;if(Date.now()-start.at<1200&&Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.6){if(start.target.matches('.page-item-list')){const buttons=start.target.querySelectorAll(':scope > .focus-pager button');const button=buttons[dx<0?1:0];if(button&&!button.disabled)button.click();}else changeRecognizedQuestion(dx<0?1:-1);}},{passive:true});
+document.addEventListener('mytree:select-question',event=>{if(typeof event.detail?.readingId==='string')openPageReading(event.detail.readingId);});
+function originalWorkHTML(item){
+ const lines=item.steps||[],presence=item.answer_presence;
+ return `<details class="study-details"><summary>我的作答</summary>${lines.length?lines.map((line,i)=>`<div class="step unknown"><span class="n">${i+1}</span><div class="math-prose">${richHTML(line)}</div><span class="status">—</span></div>`).join(''):`<p>${presence==='absent'?'原图中未发现作答。':presence==='present'?'检测到作答，但文字未读完整。':'作答区域尚未读清，暂不能确定内容。'}</p>`}</details>`;
+}
 function openPageReading(id){
- const study=state.pageStudies[id],item=state.pageBatch?.items.find(i=>i.reading_id===id);if(study?.status!=='done'||!item)return;
- state.activeReadingId=id;state.result=study.value;state.ocrResult=item;state.problem=item.problem;state.steps=item.steps.join('\n');state.hintLevel=1;state.tutorMessages=[];state.exercises=[];state.stage='learn';
- if($('result'))$('result').innerHTML=renderDiagnosis(study.value);renderPageItems();syncStage();
+ const study=state.pageStudies[id],item=state.pageBatch?.items.find(i=>i.reading_id===id);if(!item)return;
+ state.activeReadingId=id;state.ocrResult=item;state.problem=item.problem;state.steps=item.steps.join('\n');state.hintLevel=1;state.tutorMessages=[];state.exercises=[];state.stage='learn';state.showOriginal=false;
+ if(study?.status==='done'){state.previewReading=null;state.result=study.value;if($('result'))$('result').innerHTML=renderDiagnosis(study.value);}
+ else{state.previewReading=item;state.result=null;const fragments=(item.fragments||[]).filter(f=>f.role!=='teacher_annotation'&&f.role!=='crossed_out');
+  $('result').innerHTML=`<div class="current-question math-prose">${richHTML(item.problem||'题干尚未读完整。')}</div><span class="source-tag">已识别内容 · 尚未核验</span>${notice((item.attention_reasons||[]).join(' ')||'正在整理这道题；以下是目前已识别的内容。')}<section class="partial-transcript"><h3>已识别片段</h3>${fragments.map(f=>`<p class="field-tip">${f.role==='student_work'?'原作答片段':f.role==='problem'?'题干片段':'未确定归属的片段'}</p><div class="math-prose">${richHTML(f.text)}</div>`).join('')||'<p>尚无其他清晰片段。</p>'}<p class="field-tip">条件未完整时只展示识别内容，不据此自动判题。</p><button class="ghost small" data-retake-reading="${esc(item.reading_id)}">重新识别这页</button></section>${originalWorkHTML(item)}`;
+ }
+ renderPageItems();syncStage();
 }
 async function organizeReading(item,epoch,batch){
  if(state.batchCancelled||epoch!==state.photoEpoch)return;
@@ -259,7 +275,7 @@ async function organizeReading(item,epoch,batch){
  try{
   const value=await post('/api/study/reading',{batch_id:batch.batch_id,source_revision:batch.source_revision,reading_id:item.reading_id,request_id:requestId()},150000);
   if(epoch!==state.photoEpoch||batch.batch_id!==state.pageBatch?.batch_id)return;
-  state.pageStudies[item.reading_id]={status:'done',value};if(!state.activeReadingId)openPageReading(item.reading_id);
+  state.pageStudies[item.reading_id]={status:'done',value};if(!state.activeReadingId||state.previewReading?.reading_id===item.reading_id)openPageReading(item.reading_id);
  }catch(error){if(epoch===state.photoEpoch&&batch.batch_id===state.pageBatch?.batch_id)state.pageStudies[item.reading_id]={status:'failed',error:error.message};}
  finally{if(epoch===state.photoEpoch){state.batchInFlight=Math.max(0,state.batchInFlight-1);renderPageItems();syncStage();}}
 }
@@ -267,7 +283,7 @@ async function organizePage(epoch,batch){
  state.batchBusy=true;renderPageItems();const ready=batch.items.filter(i=>(i.auto_ready||i.lesson_ready)&&state.pageStudies[i.reading_id]?.status!=='done');let next=0;
  const worker=async()=>{while(next<ready.length&&!state.batchCancelled&&epoch===state.photoEpoch){const item=ready[next++];await organizeReading(item,epoch,batch);}};
  await Promise.all([worker(),worker()]);
- if(epoch===state.photoEpoch){state.batchBusy=false;renderPageItems();refreshSidebar();syncStage();}
+ if(epoch===state.photoEpoch){state.batchBusy=false;renderPageItems();if(!state.activeReadingId&&batch.items.length)openPageReading(batch.items[0].reading_id);refreshSidebar();syncStage();}
 }
 function readingChoicesHTML(result){
  if(!result.alternatives?.length)return '';
@@ -385,9 +401,9 @@ document.addEventListener('click',event=>{
  }
  if(button.id==='stop-page-work'){cancelPageWork();state.batchBusy=false;renderPageItems();}
  if(button.dataset.searchQuestion)searchQuestion(button.dataset.searchQuestion);
- if(button.dataset.openReading){button.closest('dialog')?.close();openPageReading(button.dataset.openReading);$('result')?.scrollIntoView({block:'start'});}
+ if(button.dataset.openReading){button.closest('dialog')?.close();openPageReading(button.dataset.openReading);const panel=$('result')?.closest('.capture-panel');if(panel)panel.scrollTop=0;}
  if(button.dataset.retryReading){state.batchCancelled=false;const item=state.pageBatch.items.find(i=>i.reading_id===button.dataset.retryReading);if(item)organizeReading(item,state.photoEpoch,state.pageBatch);}
- if(button.dataset.retakeReading){cancelPageWork();state.stage='select';state.showOriginal=false;syncStage();$('source-area')?.scrollIntoView({block:'start'});}
+ if(button.dataset.retakeReading){state.photoEpoch++;resetRecognition();cancelPageWork();state.stage='select';state.showOriginal=false;syncStage();$('source-area')?.scrollIntoView({block:'start'});}
  if(button.dataset.readingChoice)selectReading(button.dataset.readingChoice);
  if(button.id==='save-card-note')saveCardNote();
  if(button.id==='confirm-ocr'){diagnoseInput();}

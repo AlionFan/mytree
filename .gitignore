@@ -39,3 +39,6 @@ local.properties
 # Local QA evidence includes raw uploads, session captures, and release archives
 /docs/evidence/*
 !/docs/evidence/github-import/
+
+# Local presentation and submission exports
+/output/

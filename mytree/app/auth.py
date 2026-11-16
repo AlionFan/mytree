@@ -12,7 +12,7 @@ import ssl
 import time
 from contextlib import contextmanager
 from email.message import EmailMessage
-from email.utils import formataddr
+from email.utils import formataddr,formatdate,make_msgid
 from http.cookies import SimpleCookie, CookieError
 from .email_template import verification_email
 
@@ -108,12 +108,12 @@ def send_code(email, code):
     message['From'] = formataddr(('小树同学', config['from']))
     message['To'] = email
     message['Subject'] = '小树同学 · 登录验证码'
+    message['Date']=formatdate(localtime=False,usegmt=True)
+    message['Message-ID']=make_msgid(domain=config['from'].rsplit('@',1)[-1])
+    message['Auto-Submitted']='auto-generated'
     plain_text, html = verification_email(code, os.environ.get('MYTREE_PUBLIC_ORIGIN') or 'https://mytree.joybeat.cn')
     message.set_content(plain_text)
     message.add_alternative(html, subtype='html')
-    message.get_payload()[-1].add_related(
-        (Path(__file__).parent / 'assets' / 'crystal-hero-email.jpg').read_bytes(),
-        maintype='image', subtype='jpeg', cid='<crystal-hero>', disposition='inline')
     try:
         with smtplib.SMTP_SSL(config['host'], int(config.get('port', 465)), timeout=15, context=ssl.create_default_context()) as client:
             client.login(config['user'], config['password'])

@@ -1,12 +1,15 @@
 """Private original-image archive. Ownership is supplied by authenticated transport."""
-import base64,hashlib,io,os,re,sqlite3,uuid,warnings
+import base64,hashlib,io,os,re,sqlite3,uuid,warnings,threading
 from pathlib import Path
 from contextlib import contextmanager
 from datetime import datetime,timezone
 from PIL import Image,ImageOps,UnidentifiedImageError
-from . import profile
+from . import profile,store
 from .errors import DomainError
 MAX_BYTES=10*1024*1024
+MAX_IMAGES=1000
+MAX_ACCOUNT_BYTES=2*1024**3
+_saving=threading.BoundedSemaphore(2)
 KINDS={'JPEG':('image/jpeg','jpg'),'PNG':('image/png','png'),'WEBP':('image/webp','webp'),'GIF':('image/gif','gif'),'BMP':('image/bmp','bmp')}
 
 def _id(value):
@@ -21,6 +24,7 @@ def _db():
   con=sqlite3.connect(str(path),timeout=15);os.chmod(path,0o600);con.row_factory=sqlite3.Row
   con.execute('PRAGMA secure_delete=ON')
   con.execute('CREATE TABLE IF NOT EXISTS uploads (id TEXT PRIMARY KEY,owner TEXT NOT NULL,request_id TEXT NOT NULL,digest TEXT NOT NULL,name TEXT NOT NULL,mime TEXT NOT NULL,extension TEXT NOT NULL,created_at TEXT NOT NULL,width INTEGER NOT NULL,height INTEGER NOT NULL,size INTEGER NOT NULL,original BLOB NOT NULL,thumbnail BLOB NOT NULL,UNIQUE(owner,request_id))')
+  con.execute('CREATE TABLE IF NOT EXISTS upload_links (upload_id TEXT NOT NULL,owner TEXT NOT NULL,batch_id TEXT NOT NULL,source_revision INTEGER NOT NULL,PRIMARY KEY(upload_id,batch_id))')
   con.execute('CREATE INDEX IF NOT EXISTS uploads_owner ON uploads(owner,created_at DESC)')
   with con:yield con
  except (sqlite3.Error,OSError):raise DomainError('UPLOAD_STORAGE_FAILED','上传记录暂时无法保存或读取，请稍后重试。',503) from None
@@ -28,6 +32,11 @@ def _db():
   if 'con' in locals():con.close()
 
 def save(owner,body):
+ if not _saving.acquire(timeout=10):raise DomainError('UPLOAD_BUSY','还有图片正在保存，请稍后重试。',429)
+ try:return _save(owner,body)
+ finally:_saving.release()
+
+def _save(owner,body):
  _id(owner);request=_id(body.get('request_id'));data=body.get('image_data');name=body.get('name','图片')
  if not isinstance(name,str) or not name.strip() or len(name)>240 or re.search(r'[\x00-\x1f\x7f]',name):raise DomainError('INVALID_UPLOAD','文件名不正确。')
  if not isinstance(data,str) or len(data)>14_000_000 or not re.match(r'^data:image/[a-zA-Z0-9.+-]+;base64,',data):raise DomainError('INVALID_IMAGE','请选择不超过10 MB的图片。')
@@ -56,7 +65,14 @@ def save(owner,body):
  except (ValueError,OSError,UnidentifiedImageError,Image.DecompressionBombWarning,Image.DecompressionBombError):raise DomainError('INVALID_IMAGE','图片无法打开，请换一张JPG、PNG或WebP图片。') from None
  identifier=uuid.uuid4().hex;mime,extension=KINDS[kind];created=datetime.now(timezone.utc).isoformat()
  with _db() as db:
-  # Concurrent same-request uploads converge to a single durable row.
+  # Bound storage atomically; an exceeded archive never evicts older images.
+  db.execute('BEGIN IMMEDIATE')
+  old=db.execute('SELECT * FROM uploads WHERE owner=? AND request_id=?',(owner,request)).fetchone()
+  if old:
+   if old['digest']!=digest or old['name']!=name:raise DomainError('CONFLICT','同一次上传的图片已变化，请重新选择。',409)
+   return {'ok':True,'upload':_public(old),'duplicate':True}
+  count,size=db.execute('SELECT COUNT(*),COALESCE(SUM(size),0) FROM uploads WHERE owner=?',(owner,)).fetchone()
+  if count>=MAX_IMAGES or size+len(raw)>MAX_ACCOUNT_BYTES:raise DomainError('UPLOAD_LIMIT','上传记录已达到1000张或2 GB上限，请先删除不需要的图片。',409)
   db.execute('INSERT OR IGNORE INTO uploads VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',(identifier,owner,request,digest,name,mime,extension,created,width,height,len(raw),raw,thumb))
   row=db.execute('SELECT * FROM uploads WHERE owner=? AND request_id=?',(owner,request)).fetchone()
   if row['digest']!=digest or row['name']!=name:raise DomainError('CONFLICT','同一次上传的图片已变化，请重新选择。',409)
@@ -73,18 +89,38 @@ def listing(owner,page=1):
  with _db() as db:
   total=db.execute('SELECT COUNT(*) FROM uploads WHERE owner=?',(owner,)).fetchone()[0]
   rows=db.execute('SELECT id,name,mime,created_at,width,height,size FROM uploads WHERE owner=? ORDER BY created_at DESC,id DESC LIMIT 30 OFFSET ?',(owner,(page-1)*30)).fetchall()
-  return {'ok':True,'items':[_public(v) for v in rows],'page':page,'total':total,'has_more':page*30<total}
+  items=[_public(v) for v in rows]
+  links=db.execute('SELECT upload_id,batch_id,source_revision FROM upload_links WHERE owner=?',(owner,)).fetchall()
+  try:cards=store.read(owner)['wrong_cards'];related_available=True
+  except (OSError,ValueError):cards={};related_available=False
+  for item in items:
+   batches={(v['batch_id'],v['source_revision']) for v in links if v['upload_id']==item['id']}
+   item['related']=[{'id':card['id'],'diagnosis_id':card['diagnosis_id'],'problem':card['problem']} for card in cards.values() if (card.get('_source',{}).get('batch_id'),card.get('_source',{}).get('source_revision')) in batches]
+  return {'ok':True,'items':items,'page':page,'total':total,'has_more':page*30<total,'related_available':related_available}
 
 def image(owner,identifier,thumbnail=False):
  _id(owner);_id(identifier)
  with _db() as db:
-  row=db.execute('SELECT thumbnail,original,mime,extension FROM uploads WHERE owner=? AND id=?',(owner,identifier)).fetchone()
+  row=db.execute('SELECT '+('thumbnail' if thumbnail else 'original')+',mime,extension FROM uploads WHERE owner=? AND id=?',(owner,identifier)).fetchone()
   if not row:raise DomainError('UPLOAD_NOT_FOUND','没有找到这张图片。',404)
   return (bytes(row['thumbnail']),'image/jpeg','jpg') if thumbnail else (bytes(row['original']),row['mime'],row['extension'])
 
 def delete(owner,body):
  _id(owner);identifier=_id(body.get('upload_id'))
  with _db() as db:
+  db.execute('DELETE FROM upload_links WHERE owner=? AND upload_id=?',(owner,identifier))
   count=db.execute('DELETE FROM uploads WHERE owner=? AND id=?',(owner,identifier)).rowcount
   if not count:raise DomainError('UPLOAD_NOT_FOUND','没有找到这张图片。',404)
+ return {'ok':True}
+
+
+def link(owner,body):
+ from .reading_registry import registry
+ _id(owner);identifier=_id(body.get('upload_id'));batch=_id(body.get('batch_id'));revision=body.get('source_revision')
+ if type(revision) is not int or revision<1:raise DomainError('INVALID_SOURCE','来源版本不正确。')
+ # A client cannot assert somebody else's batch or future source version.
+ with registry._lock:registry._page(owner,batch,revision)
+ with _db() as db:
+  if not db.execute('SELECT 1 FROM uploads WHERE owner=? AND id=?',(owner,identifier)).fetchone():raise DomainError('UPLOAD_NOT_FOUND','没有找到这张图片。',404)
+  db.execute('INSERT OR IGNORE INTO upload_links VALUES (?,?,?,?)',(identifier,owner,batch,revision))
  return {'ok':True}

@@ -41,43 +41,25 @@ class FlowTests(unittest.TestCase):
     def diagnose(self):
         return self.post('/api/diagnose', problem='x^2-9', steps=['(x-3)^2'], request_id='first')
 
-    def answer_set(self, items):
-        for item in items:
-            answer = profile._load()[self.student]['exercises'][item['id']]['a']
-            self.assertTrue(self.post('/api/practice/check', exercise_id=item['id'], answer=answer)['correct'])
-
-    def test_full_learning_loop_and_reload(self):
-        diag = self.diagnose()
-        self.assertEqual(diag['analysis']['cause'], 'F-MIX-FORMULA')
-        self.assertEqual(profile.get(self.student)['reviews'][0]['stage'], 0)
-        # 重试同一次诊断不会重复记录卡点。
-        self.assertTrue(self.diagnose()['duplicate'])
-        self.assertEqual(profile.get(self.student)['history'], 1)
-        practice = self.post('/api/practice', diagnosis_id=diag['diagnosis_id'])
-        self.assertEqual(len(practice['items']), 3)
-        self.assertNotIn('a', practice['items'][0])
-        self.assertNotIn('answer', practice['items'][0])
-        self.assertEqual(practice, self.post('/api/practice', diagnosis_id=diag['diagnosis_id']))
-        item = practice['items'][0]
-        wrong = self.post('/api/practice/check', exercise_id=item['id'], answer=item['q'])
-        self.assertFalse(wrong['correct'])
-        self.assertEqual(profile.get(self.student)['practice_correct'], 0)
-        self.answer_set(practice['items'])
-        saved = profile.get(self.student)
-        self.assertEqual(saved['practice_correct'], 3)
-        self.assertTrue(next(k for k in saved['tree'] if k['id']=='F2')['lit'])
-        self.assertEqual(saved['reviews'][0]['stage'], 1)
-        answer = profile._load()[self.student]['exercises'][item['id']]['a']
-        self.assertTrue(self.post('/api/practice/check', exercise_id=item['id'], answer=answer)['duplicate'])
-        self.assertEqual(profile.get(self.student)['practice_correct'], 3)
-        self.assertEqual(json.loads(Path(profile._PATH).read_text())[self.student]['practice_correct'], 3)
-        # 新一轮复习能继续推进，复习任务编号相同也不会被误当成旧组。
-        next_round = self.post('/api/practice', review_id='F2')
-        self.answer_set(next_round['items'])
-        saved = profile.get(self.student)
-        self.assertEqual(saved['reviews'][0]['stage'], 2)
-        self.assertEqual(saved['reviews'][0]['completed'], 2)
-        self.assertFalse(saved['pending'])
+    def test_full_ai_reference_learning_loop_and_reload(self):
+        from app import store
+        diag=self.diagnose();self.assertEqual(diag['analysis']['cause'],'F-MIX-FORMULA')
+        self.assertTrue(self.diagnose()['duplicate']);self.assertEqual(profile.get(self.student)['history'],1)
+        before=store.read(self.student)
+        output={'items':[{'question':f'因式分解x^2-{n*n}','answer':f'(x-{n})(x+{n})','solution':'使用平方差公式。','relation':'同类平方差变式','answer_kind':'text'} for n in (2,4,5)]}
+        with patch('app.ai.complete',return_value=(output,{})) as model:
+            practice=self.post('/api/practice',diagnosis_id=diag['diagnosis_id'])
+            self.assertEqual(practice,self.post('/api/practice',diagnosis_id=diag['diagnosis_id']));self.assertEqual(model.call_count,1)
+        self.assertEqual(len(practice['items']),3);self.assertNotIn('reference_answer',practice['items'][0])
+        for item in practice['items']:
+            with patch('app.ai.complete',return_value=({'feedback':'请核对平方差的两项。'},{})):
+                result=self.post('/api/practice/check',exercise_id=item['id'],answer='(x-2)(x+2)')
+            self.assertIsNone(result['correct']);self.assertIn('reference_solution',result)
+        self.assertTrue(self.post('/api/practice/check',exercise_id=item['id'],answer='(x-2)(x+2)')['duplicate'])
+        after=store.read(self.student)
+        for key in ('lit','kp_correct','practice_correct','events','reviews','quiz_answers'):self.assertEqual(before[key],after[key])
+        persisted=json.loads(Path(profile._PATH).read_text())[self.student]
+        self.assertEqual(persisted['practice_correct'],0);self.assertTrue(persisted['exercises'])
 
     def test_availability_reschedules_persistently(self):
         self.diagnose()

@@ -6,7 +6,7 @@ import json
 import threading
 import time
 
-from . import ai, cards, contract, store, review, quiz, tree, growth
+from . import ai, cards, contract, store, review, tree, growth
 from .errors import DomainError
 from .reading_registry import registry as readings, ConfirmationError, new_id
 
@@ -61,9 +61,7 @@ def invoke(student, operation, params, request_id, strict=True):
         return {'status':'ok','output':review.today(student),'effects':[],
                 'verification':{'level':'unavailable','label':'来自保存的复习安排'}}
     if operation=='review.complete':return review.complete(student,params,request_id)
-    if operation=='quiz.start':return quiz.start(student,params,request_id)
-    if operation=='quiz.answer':return quiz.answer(student,params,request_id)
-    if operation=='card.unlock':return quiz.unlock(student,params,request_id)
+    if operation.startswith('quiz.') or operation=='card.unlock':raise DomainError('UNSUPPORTED','三题检验已停用，请使用巩固练习。',422)
     if operation=='tree.get':
         return {'status':'ok','output':tree.get(student),'effects':[],
                 'verification':{'level':'unavailable','label':'本机参考目录与自己整理的知识卡'}}

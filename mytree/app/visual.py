@@ -439,7 +439,7 @@ def validate_source_diagram(spec,analysis):
             if not step['shapes']:raise ValueError('每步需显示原式条件的数轴。')
         first=diagram_steps[0]['shapes'][0]
         start=sp.Interval(-sp.oo if first['left'] is None else sp.Rational(str(first['left'])).limit_denominator(1000000),sp.oo if first['right'] is None else sp.Rational(str(first['right'])).limit_denominator(1000000),left_open=first['left_open'],right_open=first['right_open'])
-        if start!=expected.closure:raise ValueError('根式条件的数轴端点与原式不一致。')
+        if len(diagram_steps)>1 and start!=expected.closure:raise ValueError('根式条件的数轴端点与原式不一致。')
         final=diagram_steps[-1]['shapes']
         if not final:raise ValueError('根式定义域必须在数轴上显示。')
         for sh in final:
@@ -493,16 +493,77 @@ def _algebra_choice_template(analysis):
     return {'title':'逐项核对','steps':[{'caption':'核对A、B选项。','lines':rows[:2]},{'caption':'核对C、D选项。','lines':rows[2:]},{'caption':'正确选项为'+correct[0]+'。','lines':[{'expression':r'\(\boxed{\mathrm{'+correct[0]+r'}}\)','reason':'在原式有定义的范围内成立'}]}]}
 
 
+def _domain_solution_template(analysis):
+    """Solve the already supported linear-radicand family from the original expression."""
+    import sympy as sp
+    from sympy.calculus.util import continuous_domain
+    from . import source_patterns
+    from .formulas import parse_math
+    match=source_patterns.classify(analysis.get('problem') or '')
+    if not match or match['family']!='expression-domain':return None
+    # This program solution may only consume the stated expression's real domain.
+    # Extra integer/sign/membership or textual restrictions must remain visible.
+    problem=analysis.get('problem') or '';blocks=source_patterns._blocks(problem)
+    if len(blocks)!=1:return None
+    remainder=problem.replace(blocks[0],'',1)
+    for marker in (r'\(',r'\)',r'\[',r'\]','$'):remainder=remainder.replace(marker,'')
+    remainder=re.sub(r'^\s*\d{1,3}[.．、]\s*','',remainder).replace(match['variable'],'')
+    remainder=re.sub(r'代数式|二次根式|根式|式子|定义域|自变量|取值|有意义|实数|范围|请问|多少|若|使|在|内|则|的|是|为|求|时','',remainder)
+    if re.sub(r'[\s。．，,；;：:、_＿…？?！!（）().]','',remainder):return None
+    expr=parse_math(match['expression']);_,power=expr.as_coeff_Mul()
+    if power.exp==-1 and power.base.is_Pow:radicand=power.base.base
+    else:radicand=power.base
+    x=next(iter(expr.free_symbols));domain=continuous_domain(expr,x,sp.S.Reals)
+    denominator='分母非零' in match['skills']
+    condition=sp.latex(radicand)+(r'>0' if denominator else r'\ge 0')
+    rows=[{'expression':r'\('+sp.latex(radicand)+r'\ge 0\)','reason':'二次根式的被开方数非负'}]
+    if denominator:rows.append({'expression':r'\(\sqrt{'+sp.latex(radicand)+r'}\ne0\)','reason':'分母不能为零'})
+    result={'title':'解题思路与步骤','steps':[
+        {'caption':'先分别列出根号和分母的限制条件。','lines':rows},
+        {'caption':'同时满足这些条件，再解不等式。','lines':[{'expression':r'\('+condition+r'\)','reason':'把所有限制取交集'}]},
+        {'caption':'得到在实数范围内有意义的取值范围。','lines':[{'expression':r'\('+sp.latex(x)+r'\in '+sp.latex(domain)+r'\)','reason':'由原式计算定义域，核对端点能否取到'}]}]}
+    if isinstance(domain,sp.Interval):
+        edge=domain.start if domain.start.is_finite else domain.end
+        if edge.is_finite and abs(edge)<99990:
+            result['steps'].append({'caption':'数轴辅助：空心点表示端点不能取到，实心点表示可以取到；着色射线表示满足条件的数。',
+                'shapes':[{'type':'numberline','x':10,'y':50,'w':80,'min':float(edge)-3,'max':float(edge)+3,
+                           'left':float(domain.start) if domain.start.is_finite else None,'right':float(domain.end) if domain.end.is_finite else None,
+                           'left_open':bool(domain.left_open),'right_open':bool(domain.right_open),'label':'满足条件的数','color':1}]})
+    return result
+
+
+def _stored_solution_template(analysis):
+    """Reuse the saved complete explanation; text learning must not depend on a new image call."""
+    hints=analysis.get('hints')
+    if not isinstance(hints,list) or len(hints)<3 or not isinstance(hints[2],str) or not hints[2].strip():return None
+    parts=[]
+    for sentence in re.split(r'(?<=[。；\n])',hints[2].strip()):
+        if not sentence.strip():continue
+        if len(sentence)>220:
+            # Never break a mathematical block across rendered lines.
+            if '\\' in sentence or '$' in sentence:return None
+            parts.extend(sentence[i:i+220] for i in range(0,len(sentence),220))
+        else:parts.append(sentence)
+    if not parts or len(parts)>12:return None
+    direction=hints[0] if isinstance(hints[0],str) and 0<len(hints[0])<=220 else '先读清原题条件，确定需要解决的问题。'
+    steps=[{'caption':'先明确解题思路。','lines':[{'expression':direction,'reason':'解题方向'}]}]
+    for i in range(0,len(parts),4):
+        steps.append({'caption':'完整解法与步骤。' if i==0 else '继续推导并核对结论。',
+                      'lines':[{'expression':part,'reason':'已保存的解题说明'} for part in parts[i:i+4]]})
+    try:return validate_diagram({'title':'解题思路与步骤','steps':steps})
+    except (ValueError,TypeError):return None
+
+
 def diagram_lesson(student,body):
     if set(body)-{'student','diagnosis_id'}:raise ValueError('请从当前题目打开解题思路与步骤。')
     diagnosis_id=body.get('diagnosis_id');store._identifier(diagnosis_id,'题目编号')
     try:analysis=profile.diagnosis_for(student,diagnosis_id)
     except ValueError:raise DomainError('NOT_FOUND','这道题已更新，请重新打开。',404) from None
     from .source_images import for_diagnosis
-    source_image=for_diagnosis(student,diagnosis_id)
+    source_image=None
     context={key:analysis.get(key) for key in ('problem','domain','hints','target_latex','diagram_description','knowledge_ids')}
     fingerprint=hashlib.sha256(json.dumps(context,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
-    cache_key='v8:solution-first:'+diagnosis_id+':'+fingerprint
+    cache_key='v9:text-first:'+diagnosis_id+':'+fingerprint
     lock=_DIAGRAM_LOCKS[int(hashlib.sha256((student+diagnosis_id).encode()).hexdigest()[:4],16)%16]
     if not lock.acquire(blocking=False):raise ai.ModelError('正在整理这道题的解法，请稍等再试。','MODEL_BUSY',429)
     try:
@@ -510,10 +571,14 @@ def diagram_lesson(student,body):
         if not isinstance(cache,dict):raise DomainError('STORAGE_FAILED','解题步骤暂时无法读取。',503)
         saved=cache.get(cache_key)
         area_template=_area_template(analysis)
-        template=area_template or _algebra_choice_template(analysis)
+        domain_template=_domain_solution_template(analysis)
+        template=domain_template or area_template or _algebra_choice_template(analysis)
+        stored_template=_stored_solution_template(analysis) if template is None else None
+        template=template or stored_template
         if saved:spec=validate_source_diagram(validate_diagram(saved),analysis)
         elif template:spec=validate_diagram(template)
         else:
+            source_image=for_diagnosis(student,diagnosis_id)
             content=json.dumps(context,ensure_ascii=False)
             if source_image:content=[{'type':'text','text':content},{'type':'image_url','image_url':{'url':source_image,'detail':'high'}}]
             raw,_=ai.complete('vision' if source_image else 'diagram',[{'role':'system','content':_DIAGRAM_SYSTEM},{'role':'user','content':content}],limit=6500)
@@ -535,6 +600,6 @@ def diagram_lesson(student,body):
             store.update(student,commit_template)
         # Explicit full-solution access is recorded on the server, including cache replays.
         access=store.record_hint_view(student,diagnosis_id,3)
-        return {'ok':True,'diagnosis_id':diagnosis_id,'title':spec['title'],'problem':analysis.get('problem') or '', 'verification':{'level':'ai_review','label':('程序面积示意 · 图中使用正长度' if area_template else '逐项计算核对') if template else 'AI解题说明 · 请对照题目条件'},
-                'rendering':('program_area_template' if area_template else 'program_algebra_template') if template else 'ai_geometry', 'max_hint_level_recorded':access['max_hint_level'], 'steps':[{'caption':step['caption'],**({'lines':step['lines']} if 'lines' in step else {'svg':diagram_svg(step,spec['title']),'notes':_diagram_notes(step)})} for step in spec['steps']]}
+        return {'ok':True,'diagnosis_id':diagnosis_id,'title':spec['title'],'problem':analysis.get('problem') or '', 'verification':{'level':'ai_review','label':('原式定义域已程序核对' if domain_template else '已保存的文字解法 · AI参考' if stored_template else '程序面积示意 · 图中使用正长度' if area_template else '逐项计算核对') if template else 'AI解题说明 · 请对照题目条件'},
+                'rendering':('program_domain_solution' if domain_template else 'stored_text_solution' if stored_template else 'program_area_template' if area_template else 'program_algebra_template') if template else 'ai_geometry', 'max_hint_level_recorded':access['max_hint_level'], 'steps':[{'caption':step['caption'],**({'lines':step['lines']} if 'lines' in step else {'svg':diagram_svg(step,spec['title']),'notes':_diagram_notes(step)})} for step in spec['steps']]}
     finally:lock.release()
